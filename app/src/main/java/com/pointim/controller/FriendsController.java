@@ -40,26 +40,18 @@ public class FriendsController {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                /*System.out.println("1111111111111111111111111111111111111111111111111");
-                FriendResult result = new FriendResult();
                 try {
-                    Log.e("Friend", user);
-                    RosterEntry friend = SmackManager.getInstance().getFriend(user);
-                    Log.e("Friend", "friend is null" + (friend==null));
-                    result.setFriend(friend);
-                } catch (NullPointerException e) {
-                    e.printStackTrace();
-                    result.setMessage(e.getMessage());
-                }
-                observer.update(null, result);*/
-                try {
-                    SmackManager.getInstance().searchUser(user);
+                    List<AddFriend> result = SmackManager.getInstance().searchUser(user);
+                    observer.update(null, result);
                 } catch (SmackException.NotConnectedException e) {
                     e.printStackTrace();
+                    observer.update(null, null);
                 } catch (XMPPException.XMPPErrorException e) {
                     e.printStackTrace();
+                    observer.update(null, null);
                 } catch (SmackException.NoResponseException e) {
                     e.printStackTrace();
+                    observer.update(null, null);
                 }
             }
         }).start();
@@ -75,7 +67,7 @@ public class FriendsController {
             @Override
             public void run() {
                 ResultParam resultParam = new ResultParam();
-                resultParam.setFlag(SmackManager.getInstance().addFriend(af.getUsername(), af.getNickname(), af.getGroupname()));
+                resultParam.setFlag(SmackManager.getInstance().addFriend(af.getUsername(), af.getRemark(), af.getGroupname()));
                 Log.e("Friend", "返回结果" + resultParam.isFlag());
                 observer.update(null, resultParam);
             }

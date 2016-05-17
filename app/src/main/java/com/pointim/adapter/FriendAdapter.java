@@ -9,6 +9,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.pointim.R;
+import com.pointim.model.AddFriend;
+import com.pointim.utils.StringUtils;
 
 import org.jivesoftware.smack.roster.RosterEntry;
 
@@ -18,11 +20,11 @@ import java.util.List;
  * Created by Eric on 2016/5/15.
  */
 public class FriendAdapter extends BaseAdapter {
-    private List<RosterEntry> mList;
+    private List<AddFriend> mList;
     private LayoutInflater mInflater;
     private Context mContext;
 
-    public FriendAdapter(Context context, List<RosterEntry> mList) {
+    public FriendAdapter(Context context, List<AddFriend> mList) {
         this.mList = mList;
         mContext = context;
         mInflater = LayoutInflater.from(context);
@@ -41,8 +43,9 @@ public class FriendAdapter extends BaseAdapter {
     }
 
     public View getView(int position, View convertView, ViewGroup parent) {
-        RosterEntry viewTag;
+        AddFriend viewTag;
         TextView nickName;
+        TextView username;
 
         convertView = mInflater.inflate(R.layout.item_friend, null);
         // construct an item tag
@@ -50,7 +53,12 @@ public class FriendAdapter extends BaseAdapter {
         convertView.setTag(viewTag);
 
         nickName = (TextView) convertView.findViewById(R.id.nickname);
-        nickName.setText(viewTag.getName() + "(" + viewTag.getUser() + ")");
+        if (StringUtils.isBlank(viewTag.getRemark()))
+        nickName.setText(viewTag.getNickname());
+        else
+        nickName.setText(viewTag.getRemark());
+        username = (TextView) convertView.findViewById(R.id.username);
+        username.setText(viewTag.getUsername());
         return convertView;
     }
 }

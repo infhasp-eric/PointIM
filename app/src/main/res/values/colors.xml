@@ -7,4 +7,11 @@
     <color name="titleBarColor">#303F9F</color>
     <color name="titleTextColor">#ffffff</color>
     <color name="white">#ffffff</color>
+    <color name="topTitleBar_default_background">#18B5EA</color>
+    <color name="transparency">#00000000</color><!--透明 -->
+
+    <color name="emoji_keyboard_bg_light">#f6f5f5</color>
+    <color name="chat_keyboard_bg">#ECECEC</color>
+
+    <color name="black">#000000</color><!--黑色 -->
 </resources>

@@ -1,11 +1,23 @@
 package com.pointim.model;
 
+import java.io.Serializable;
+
 /**
  * Created by Eric on 2016/5/16.
  */
-public class AddFriend {
+public class AddFriend implements Serializable {
     private String username;
     private String nickname;
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
+    }
+
+    private String remark;
 
     public String getGroupname() {
         return groupname;

@@ -5,4 +5,5 @@
     <string name="title_activity_add_friend">AddFriendActivity</string>
 
     <string name="hello_world">Hello world!</string>
+    <string name="title_activity_chat">ChatActivity</string>
 </resources>

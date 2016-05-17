@@ -3,6 +3,7 @@ package com.pointim.smack;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.pointim.model.AddFriend;
 import com.pointim.model.FriendResult;
 
 import org.jivesoftware.smack.SASLAuthentication;
@@ -53,7 +54,7 @@ public class SmackManager {
     /**
      * 服务器名称
      */
-    public static final String SERVER_NAME = "eric-pc";
+    public static final String SERVER_NAME = "point-im-server";
     /**
      * 
      */
@@ -558,8 +559,8 @@ public class SmackManager {
         }  
     }
 
-	public void searchUser(String userName) throws NotConnectedException, XMPPErrorException, NoResponseException {
-		//List<User> results = new ArrayList<User>();
+	public List<AddFriend> searchUser(String userName) throws NotConnectedException, XMPPErrorException, NoResponseException {
+		List<AddFriend> results = new ArrayList<AddFriend>();
 		try {
 
 		System.out.println("查询开始..............." + connection.getHost()
@@ -567,24 +568,28 @@ public class SmackManager {
 
 		UserSearchManager usm = new UserSearchManager(connection);
 
-		Form searchForm = usm.getSearchForm("search.eric-pc");
+		Form searchForm = usm.getSearchForm(("search." + connection.getServiceName()));//"search.point-im-server"
 		Form answerForm = searchForm.createAnswerForm();
 		answerForm.setAnswer("Username", true);
 		answerForm.setAnswer("search", userName);
-		ReportedData data = usm.getSearchResults(answerForm, "search.eric-pc");
+		ReportedData data = usm.getSearchResults(answerForm, ("search." + connection.getServiceName()));// + connection.getServiceName()
 
 		List<ReportedData.Row> it = data.getRows();
 		ReportedData.Row row = null;
-		//User user = null;
+			AddFriend friend = null;
 		for (int i = 0; i < it.size(); i++) {
-			//user = new User();
+			friend = new AddFriend();
 			row = it.get(i);
 			Log.e("search", "username is : " + row.getValues("Username") + row.getValues("Nickname") + row.getValues("Name"));
 			// 若存在，则有返回,UserName一定非空，其他两个若是有设，一定非空
+			friend.setUsername(row.getValues("Username").get(0));
+			friend.setNickname(row.getValues("Name").get(0));
+			results.add(friend);
 		}
 		} catch (Exception e) {
 			 e.printStackTrace();
 		}
+		return results;
 	}
 
 }
