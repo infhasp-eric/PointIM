@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">PointIM</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_register">RegisterActivity</string>
+    <string name="title_activity_add_friend">AddFriendActivity</string>
+
+    <string name="hello_world">Hello world!</string>
+</resources>

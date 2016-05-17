@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/title_bar_height"
+        android:background="@color/titleBarColor">
+
+        <TextView
+            android:layout_width="50dp"
+            android:layout_height="match_parent" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:textColor="@color/titleTextColor"
+            android:gravity="center"
+            android:textSize="@dimen/title_text_size"
+            android:text="我的"/>
+
+        <ImageView
+            android:layout_width="50dp"
+            android:layout_height="match_parent"
+            android:src="@drawable/add_friend"/>
+    </LinearLayout>
+
+
+</LinearLayout>

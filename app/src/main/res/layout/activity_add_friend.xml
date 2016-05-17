@@ -1,0 +1,57 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/title_bar_height"
+        android:background="@color/titleBarColor">
+
+        <TextView
+            android:layout_width="50dp"
+            android:layout_height="match_parent" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:textColor="@color/titleTextColor"
+            android:gravity="center"
+            android:textSize="@dimen/title_text_size"
+            android:text="添加好友"/>
+
+        <ImageView
+            android:id="@+id/bt_query"
+            android:layout_width="50dp"
+            android:layout_height="match_parent"
+            android:padding="10dp"
+            android:src="@drawable/bt_query"/>
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:layout_width="@dimen/dimen_80"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:text="用&#160;&#160;户&#160;&#160;名：" />
+
+        <com.pointim.ui.ClearEditText
+            android:id="@+id/et_username"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lines="1"
+            android:hint="输入用户名" >
+        </com.pointim.ui.ClearEditText>
+    </LinearLayout>
+
+    <include
+        android:id="@+id/friend_content"
+        layout="@layout/add_friend_content" />
+
+</LinearLayout>
