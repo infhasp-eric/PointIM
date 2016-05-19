@@ -7,14 +7,22 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import com.pointim.R;
+import com.pointim.model.ChatParam;
+import com.pointim.smack.SmackManager;
+import com.pointim.utils.StringUtils;
 import com.pointim.view.fragment.CenterFragment;
 import com.pointim.view.fragment.ChatFragment;
 import com.pointim.view.fragment.FriendsFragment;
+
+import org.jivesoftware.smack.chat.Chat;
+import org.jivesoftware.smack.chat.ChatManagerListener;
+import org.jivesoftware.smack.chat.ChatMessageListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +45,52 @@ public class MainActivity extends FragmentActivity {
             {R.mipmap.bt_list,R.mipmap.bt_list},
             {R.mipmap.bt_center, R.mipmap.bt_center}};
 
+    //聊天监听器
+    public static ChatManagerListener chatManagerListener;
+
+    public static Handler chatHandler = new Handler() {
+        @Override
+        public void handleMessage(Message message) {
+            super.handleMessage(message);
+
+            org.jivesoftware.smack.packet.Message param = (org.jivesoftware.smack.packet.Message) message.obj;
+            switch(message.what) {
+                //有内容
+                case 1:
+                    //此时判断是否正在聊天
+                    //正在聊天
+                    if(ChatActivity.isActive) {
+                        //当前聊天的对象和接收到数据的对象一致
+                        if (param.getFrom().startsWith(ChatActivity.chatJid)) {
+                            //将新信息添加进聊天框中
+                            Log.e("Chat", "1111111111111111111111111111");
+                            Log.e("Chat", param.getBody());
+                        } else {
+                            //在聊天列表中添加新信息提醒
+                            Log.e("Chat", "22222222222222222222222222222");
+                        }
+                    } else {
+                        //在聊天列表中添加新信息提醒
+                        Log.e("Chat", "22222222222222222222222222222");
+                    }
+                    break;
+                //无内容
+                case 0:
+                    if(ChatActivity.isActive) {
+                        //当前聊天的对象和接收到数据的对象一致
+                        if (param.getFrom().startsWith(ChatActivity.chatJid)) {
+                            //提示对方正在输入
+                            Log.e("Chat", "33333333333333333333333333333333333");
+                        } else {
+                            //不做任何操作
+                            break;
+                        }
+                    }
+                    break;
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,6 +99,7 @@ public class MainActivity extends FragmentActivity {
         //获取FragmentManager实例
         fgManager = getSupportFragmentManager();
         init();
+        initListener();
         LoginIn();
 
         btChat.setOnClickListener(new View.OnClickListener() {
@@ -71,6 +126,13 @@ public class MainActivity extends FragmentActivity {
         });
 
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //去除监听类
+        SmackManager.getInstance().getChatManager().removeChatListener(chatManagerListener);
     }
 
     // 初始化信息
@@ -182,6 +244,34 @@ public class MainActivity extends FragmentActivity {
                 }
             });
         }*/
+    }
+
+    /**
+     * 初始化监听器
+     */
+    public void initListener() {
+        chatManagerListener = new ChatManagerListener() {
+            @Override
+            public void chatCreated(Chat chat, boolean createdLocally) {
+                chat.addMessageListener(new ChatMessageListener() {
+                    @Override
+                    public void processMessage(Chat chat, org.jivesoftware.smack.packet.Message message) {
+                        //接收到消息Message之后进行消息展示处理，这个地方可以处理所有人的消息
+                        Message msg = new Message();
+                        //判断是否有内容
+                        if(StringUtils.isBlank(message.getBody())) {
+                            msg.what = 0;
+                        } else {
+                            msg.what = 1;
+                        }
+                        msg.obj = message;
+                        //发送通知，让程序处理消息
+                        chatHandler.sendMessage(msg);
+                    }
+                });
+            }
+        };
+        SmackManager.getInstance().getChatManager().addChatListener(chatManagerListener);
     }
 
 }

@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.widget.ListView;
 
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
@@ -40,6 +41,9 @@ import java.util.Date;
 import java.util.List;
 
 public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeyboardOperateListener {
+    public static boolean isActive = false;//聊天窗口是否已创建
+    public static String chatJid;//记录当前正在聊天对象的id
+
     /**
      * 聊天内容展示列表
      */
@@ -52,7 +56,7 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
     private ChatKeyboard mChatKyboard;
 
     /**
-     * 聊天对象用户Jid
+     * 聊天对象用户名
      */
     private String friendRosterUser;
     /**
@@ -74,7 +78,7 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
     /**
      * 聊天记录展示适配器
      */
-    private ChatAdapter mAdapter;
+    private static ChatAdapter mAdapter;
 
     /**
      * 文件发送对象
@@ -90,15 +94,16 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+        isActive = true;
 
         mChatKyboard.setChatKeyboardOperateListener(this);
         friendRosterUser = getIntent().getStringExtra("user");
         friendNickname = getIntent().getStringExtra("nickname");
         currNickname = SmackManager.getInstance().getAccountName();
 
-        String chatJid = SmackManager.getInstance().getChatJidByUser(friendRosterUser);
+        chatJid = SmackManager.getInstance().getChatJidByUser(friendRosterUser);
+        Log.e("Chat", "chatJid is " + chatJid);
         sendUser = SmackManager.getInstance().getFileTransferJidChatJid(chatJid);
-        SmackManager.getInstance().getChatManager().addChatListener(chatManagerListener);
         chat = SmackManager.getInstance().createChat(chatJid);
 
         options = new DisplayImageOptions.Builder()
@@ -118,21 +123,6 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
         mAdapter = new ChatAdapter(mContext, options, list);
         mListView.setAdapter(mAdapter);
     }
-
-    private ChatManagerListener chatManagerListener = new ChatManagerListener() {
-        @Override
-        public void chatCreated(Chat chat, boolean createdLocally) {
-            chat.addMessageListener(new ChatMessageListener() {
-                @Override
-                public void processMessage(Chat chat, Message message) {
-                    //接收到消息Message之后进行消息展示处理，这个地方可以处理所有人的消息
-                    com.pointim.model.Message msg = new com.pointim.model.Message(com.pointim.model.Message.MESSAGE_TYPE_TEXT, friendNickname, DateUtil.formatDatetime(new Date()), false);
-                    msg.setContent(message.getBody());
-                    handler.obtainMessage(1, msg).sendToTarget();
-                }
-            });
-        }
-    };
 
     /**
      * 发送消息
@@ -159,7 +149,7 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
     };
 
     @SuppressLint("HandlerLeak")
-    private Handler handler = new Handler() {
+    public static Handler handler = new Handler() {
         public void handleMessage(android.os.Message msg) {
             switch(msg.what) {
                 case 1:
@@ -255,9 +245,11 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
         }.start();
     }
 
+    @Override
     protected void onDestroy() {
         super.onDestroy();
-        SmackManager.getInstance().getChatManager().removeChatListener(chatManagerListener);
+        isActive = false;//修改是否正在聊天的标识符
+        chatJid = null;//清空聊天的id
     }
 
     /**

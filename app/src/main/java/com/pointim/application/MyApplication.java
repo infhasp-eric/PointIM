@@ -9,6 +9,15 @@ import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.assist.QueueProcessingType;
 import com.pointim.controller.UserController;
+import com.pointim.smack.SmackManager;
+import com.pointim.utils.DateUtil;
+
+import org.jivesoftware.smack.chat.Chat;
+import org.jivesoftware.smack.chat.ChatManagerListener;
+import org.jivesoftware.smack.chat.ChatMessageListener;
+import org.jivesoftware.smack.packet.Message;
+
+import java.util.Date;
 
 /**
  * Created by Eric on 2016/5/14.
@@ -33,7 +42,6 @@ public class MyApplication extends Application {
         ImageLoader.getInstance().init(config);
     }
 
-
     @Override
     public void onTerminate() {
         // 程序终止的时候执行
@@ -41,6 +49,7 @@ public class MyApplication extends Application {
 
         //在程序退出时注销账号
         UserController.userLogout();
+
         super.onTerminate();
     }
 }

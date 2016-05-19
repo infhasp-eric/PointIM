@@ -1,6 +1,7 @@
 package com.pointim.adapter;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,14 +52,17 @@ public class FriendAdapter extends BaseAdapter {
         // construct an item tag
         viewTag = mList.get(position);
         convertView.setTag(viewTag);
-
-        nickName = (TextView) convertView.findViewById(R.id.nickname);
-        if (StringUtils.isBlank(viewTag.getRemark()))
-        nickName.setText(viewTag.getNickname());
-        else
-        nickName.setText(viewTag.getRemark());
-        username = (TextView) convertView.findViewById(R.id.username);
-        username.setText(viewTag.getUsername());
+        try {
+            nickName = (TextView) convertView.findViewById(R.id.nickname);
+            if (StringUtils.isBlank(viewTag.getRemark()))
+                nickName.setText(viewTag.getNickname());
+            else
+                nickName.setText(viewTag.getRemark());
+            username = (TextView) convertView.findViewById(R.id.username);
+            username.setText(viewTag.getUsername());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return convertView;
     }
 }

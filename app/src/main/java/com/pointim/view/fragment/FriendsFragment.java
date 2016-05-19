@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by Eric on 2016/5/14.
@@ -53,11 +54,16 @@ public class FriendsFragment extends Fragment {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        initView(view);
-        getAllFriends();
+        try {
+            initView(view);
+            getAllFriends();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void initView(View view) {
+        Log.e("Friend", "111111111111111111111111111111111111");
         listView = (PullToRefreshListView) view.findViewById(R.id.friends_list);
         friendAdapter = new FriendAdapter(getActivity().getApplicationContext(), friendList);
         listView.setAdapter(friendAdapter);
@@ -94,7 +100,7 @@ public class FriendsFragment extends Fragment {
                     friend.setRemark(re.getName());
                     friend.setUsername(re.getUser());
                     friendList.add(friend);
-                    Log.e("Friend", re.getName());
+                    //Log.e("Friend", re.getName());
                 }
                 upHandler.sendMessage(new Message());
             }

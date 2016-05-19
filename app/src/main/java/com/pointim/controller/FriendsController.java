@@ -27,9 +27,12 @@ public class FriendsController {
             @Override
             public void run() {
                 Set<RosterEntry> friends = SmackManager.getInstance().getAllFriends();
+                Log.e("List", "Friends size is " + friends.size());
                 List<RosterEntry> list = new ArrayList<>();
-                for(RosterEntry friend : friends) {
-                    list.add(friend);
+                if(friends != null) {
+                    for (RosterEntry friend : friends) {
+                        list.add(friend);
+                    }
                 }
                 observer.update(null, list);
             }
