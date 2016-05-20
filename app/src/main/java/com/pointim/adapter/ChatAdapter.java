@@ -13,7 +13,9 @@ import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 import com.pointim.R;
+import com.pointim.model.ChatParam;
 import com.pointim.model.Message;
+import com.pointim.utils.DateUtil;
 
 import java.io.IOException;
 import java.util.List;
@@ -45,14 +47,14 @@ public class ChatAdapter extends BaseAdapter {
 	/**
 	 * 聊天数据
 	 */
-	private List<Message> list;
+	private List<ChatParam> list;
 	/**
 	 * 音频播放器
 	 */
 	private MediaPlayer mediaPlayer;
 	
 	public ChatAdapter(Activity context, DisplayImageOptions options,
-					   List<Message> list) {
+					   List<ChatParam> list) {
 		super();
 		this.context = context;
 		this.options = options;
@@ -65,7 +67,7 @@ public class ChatAdapter extends BaseAdapter {
 	}
 
 	@Override
-	public Message getItem(int position) {
+	public ChatParam getItem(int position) {
 		return list.get(position);
 	}
 
@@ -84,7 +86,7 @@ public class ChatAdapter extends BaseAdapter {
         return 2;
     }
     
-    public void update(Message message) {
+    public void update(ChatParam message) {
     	int idx = list.indexOf(message);
     	if(idx < 0) {
     		list.add(message);
@@ -94,14 +96,14 @@ public class ChatAdapter extends BaseAdapter {
     	notifyDataSetChanged();
     }
 	
-	public void add(Message message) {
+	public void add(ChatParam message) {
 		list.add(message);
 		notifyDataSetChanged();
 	}
 
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		final Message message = list.get(position);
+		final ChatParam message = list.get(position);
 		final ChatViewHolder viewHolder;
 		if(convertView == null) {
 			viewHolder = new ChatViewHolder();
@@ -123,10 +125,22 @@ public class ChatAdapter extends BaseAdapter {
 		}
 		
 		viewHolder.chatUsername.setText(message.getUsername());
-		viewHolder.chatContentTime.setText(message.getDatetime());
-		setMessageViewVisible(message.getType(), viewHolder);
-		if(message.getType() == Message.MESSAGE_TYPE_TEXT) {//文本消息
-			viewHolder.chatContentText.setText(message.getContent());
+		if(position >= 1) {
+			ChatParam lastChatParam = list.get(position - 1);
+			if ((message.getDatetime().getTime() - lastChatParam.getDatetime().getTime()) < (1000*60*5)) {
+				viewHolder.chatContentTime.setVisibility(View.GONE);
+			} else {
+				viewHolder.chatContentTime.setText(DateUtil.formatDate(message.getDatetime()));
+				viewHolder.chatContentTime.setVisibility(View.VISIBLE);
+			}
+		} else {
+			viewHolder.chatContentTime.setText(DateUtil.formatDate(message.getDatetime()));
+			viewHolder.chatContentTime.setVisibility(View.VISIBLE);
+		}
+		setMessageViewVisible(1, viewHolder);
+		viewHolder.chatContentText.setText(message.getBody());
+
+		/*if(message.getType() == Message.MESSAGE_TYPE_TEXT) {//文本消息
 		} else if(message.getType() == Message.MESSAGE_TYPE_IMAGE) {//图片消息
 			String url = "file://" + message.getFilePath();
 			ImageLoader.getInstance().displayImage(url, viewHolder.chatContentImage, options, new SimpleImageLoadingListener());
@@ -139,7 +153,7 @@ public class ChatAdapter extends BaseAdapter {
 				}
 			});
 			showLoading(viewHolder, message);
-		}
+		}*/
 		return convertView;
 	}
 	
@@ -171,11 +185,11 @@ public class ChatAdapter extends BaseAdapter {
 	 * @param viewHolder
 	 */
 	private void setMessageViewVisible(int type, ChatViewHolder viewHolder) {
-		if(type == Message.MESSAGE_TYPE_TEXT) {//文本消息
+		if(type == ChatParam.MESSAGE_TYPE_TEXT) {//文本消息
 			viewHolder.chatContentText.setVisibility(View.VISIBLE);
 			viewHolder.chatContentImage.setVisibility(View.GONE);
 			viewHolder.chatContentVoice.setVisibility(View.GONE);
-		} else if(type == Message.MESSAGE_TYPE_IMAGE) {//图片消息
+		}/* else if(type == Message.MESSAGE_TYPE_IMAGE) {//图片消息
 			viewHolder.chatContentText.setVisibility(View.GONE);
 			viewHolder.chatContentImage.setVisibility(View.VISIBLE);
 			viewHolder.chatContentVoice.setVisibility(View.GONE);
@@ -183,7 +197,7 @@ public class ChatAdapter extends BaseAdapter {
 			viewHolder.chatContentText.setVisibility(View.GONE);
 			viewHolder.chatContentImage.setVisibility(View.GONE);
 			viewHolder.chatContentVoice.setVisibility(View.VISIBLE);
-		}
+		}*/
 	}
 
 	/**

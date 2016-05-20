@@ -70,7 +70,7 @@ public class FriendsController {
             @Override
             public void run() {
                 ResultParam resultParam = new ResultParam();
-                resultParam.setFlag(SmackManager.getInstance().addFriend(af.getUsername(), af.getRemark(), af.getGroupname()));
+                resultParam.setFlag(SmackManager.getInstance().addFriend(af.getUsername(), af.getRemark(), null));
                 Log.e("Friend", "返回结果" + resultParam.isFlag());
                 observer.update(null, resultParam);
             }

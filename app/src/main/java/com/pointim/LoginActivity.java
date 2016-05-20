@@ -2,6 +2,8 @@ package com.pointim;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -21,6 +23,15 @@ import java.util.Observer;
 public class LoginActivity extends AppCompatActivity {
     private EditText username, password;
     private Button btLogin;
+
+    private Handler toastHandler = new Handler() {
+        @Override
+        public void handleMessage(Message message) {
+            super.handleMessage(message);
+            String str = (String) message.obj;
+            Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT).show();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,7 +84,9 @@ public class LoginActivity extends AppCompatActivity {
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                     startActivity(intent);
                 } else {
-                    Toast.makeText(LoginActivity.this, result.getMessage(), Toast.LENGTH_SHORT).show();
+                    Message message = new Message();
+                    message.obj = result.getMessage();
+                    toastHandler.sendMessage(message);
                 }
             }
         });

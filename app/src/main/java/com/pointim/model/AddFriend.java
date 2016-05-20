@@ -9,6 +9,16 @@ public class AddFriend implements Serializable {
     private String username;
     private String nickname;
 
+    public boolean isHasMessage() {
+        return hasMessage;
+    }
+
+    public void setHasMessage(boolean hasMessage) {
+        this.hasMessage = hasMessage;
+    }
+
+    private boolean hasMessage = false;
+
     public String getRemark() {
         return remark;
     }

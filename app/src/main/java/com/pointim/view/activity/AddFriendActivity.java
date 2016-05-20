@@ -1,6 +1,8 @@
 package com.pointim.view.activity;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -27,6 +29,15 @@ public class AddFriendActivity extends AppCompatActivity {
     private ClearEditText remark;
     private Button addFriend;
     private AddFriend af;
+
+    private Handler toastHandler = new Handler() {
+        @Override
+        public void handleMessage(Message message) {
+            super.handleMessage(message);
+            String str = (String) message.obj;
+            Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT).show();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,19 +72,18 @@ public class AddFriendActivity extends AppCompatActivity {
                     @Override
                     public void update(Observable observable, Object data) {
                         ResultParam rp = (ResultParam) data;
+                        Message msg = new Message();
+
                         if(rp.isFlag()) {
-                            toast("添加成功");
+                            msg.obj = "添加成功";
                             FriendsFragment.getAllFriends();
                         } else {
-                            toast("添加失败");
+                            msg.obj = "添加失败";
                         }
+                        toastHandler.sendMessage(msg);
                     }
                 });
             }
         });
-    }
-
-    private void toast(String message) {
-        Toast.makeText(AddFriendActivity.this, message, Toast.LENGTH_SHORT).show();
     }
 }

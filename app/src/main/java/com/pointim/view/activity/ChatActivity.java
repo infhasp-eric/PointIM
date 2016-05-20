@@ -14,10 +14,13 @@ import android.widget.ListView;
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.pointim.R;
 import com.pointim.adapter.ChatAdapter;
+import com.pointim.controller.ChatController;
 import com.pointim.inject.annotation.InjectView;
+import com.pointim.model.ChatParam;
 import com.pointim.smack.SmackManager;
 import com.pointim.ui.ChatKeyboard;
 import com.pointim.utils.BitmapUtil;
+import com.pointim.utils.ChatUtils;
 import com.pointim.utils.DateUtil;
 import com.pointim.utils.FileUtil;
 import com.pointim.utils.SdCardUtil;
@@ -39,10 +42,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 
 public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeyboardOperateListener {
     public static boolean isActive = false;//聊天窗口是否已创建
     public static String chatJid;//记录当前正在聊天对象的id
+    public List<ChatParam> chatParams;
 
     /**
      * 聊天内容展示列表
@@ -99,10 +106,12 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
         mChatKyboard.setChatKeyboardOperateListener(this);
         friendRosterUser = getIntent().getStringExtra("user");
         friendNickname = getIntent().getStringExtra("nickname");
-        currNickname = SmackManager.getInstance().getAccountName();
 
-        chatJid = SmackManager.getInstance().getChatJidByUser(friendRosterUser);
-        Log.e("Chat", "chatJid is " + chatJid);
+        chatJid = SmackManager.getInstance().getChatJidByUser(friendRosterUser);//获取聊天对象的chatJid
+        currNickname = SmackManager.getInstance().getAccountName();//获取当前自己的昵称
+
+        chatParams = ChatUtils.getChatParams(chatJid);
+
         sendUser = SmackManager.getInstance().getFileTransferJidChatJid(chatJid);
         chat = SmackManager.getInstance().createChat(chatJid);
 
@@ -119,8 +128,7 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
         fileDir = SdCardUtil.getCacheDir(mContext);
         receiveFile();
 
-        List<com.pointim.model.Message> list = new ArrayList<>();
-        mAdapter = new ChatAdapter(mContext, options, list);
+        mAdapter = new ChatAdapter(mContext, options, chatParams);
         mListView.setAdapter(mAdapter);
     }
 
@@ -133,32 +141,33 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
         if(StringUtils.isBlank(message)) {
             return;
         }
-        new Thread(){
-            public void run() {
-                try {
-                    chat.sendMessage(message);
-                    com.pointim.model.Message msg = new com.pointim.model.Message(com.pointim.model.Message.MESSAGE_TYPE_TEXT, currNickname, DateUtil.formatDatetime(new Date()), true);
-                    msg.setContent(message);
-                    handler.obtainMessage(1, msg).sendToTarget();
-                } catch (SmackException.NotConnectedException e) {
-                    e.printStackTrace();
-                }
-            };
-        }.start();
-
-    };
+        ChatParam param = new ChatParam();
+        param.setBody(message);
+        param.setTo(chatJid);
+        param.setFriendChatJid(chatJid);
+        ChatController.sendMessage(chat, param, new Observer() {
+            @Override
+            public void update(Observable observable, Object data) {
+                ChatParam param1 = (ChatParam) data;
+                MainActivity.addChatParm(param1, handler);
+            }
+        });
+    }
 
     @SuppressLint("HandlerLeak")
     public static Handler handler = new Handler() {
         public void handleMessage(android.os.Message msg) {
-            switch(msg.what) {
+            mAdapter.notifyDataSetChanged();
+            Log.e("Chat", "ChatAct chatJid is " + chatJid);
+            Log.e("Chat", "Size is " + MainActivity.chatRecord.get(chatJid).size());
+/*            switch(msg.what) {
                 case 1:
-                    mAdapter.add((com.pointim.model.Message) msg.obj);
+                    mAdapter.notifyDataSetChanged();
                     break;
                 case 2:
-                    mAdapter.update((com.pointim.model.Message) msg.obj);
+                    mAdapter.notifyDataSetChanged();
                     break;
-            }
+            }*/
         };
     };
 

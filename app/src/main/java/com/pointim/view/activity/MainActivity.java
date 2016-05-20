@@ -15,7 +15,10 @@ import android.widget.LinearLayout;
 import com.pointim.R;
 import com.pointim.model.ChatParam;
 import com.pointim.smack.SmackManager;
+import com.pointim.task.AddChatParamTask;
+import com.pointim.utils.DateUtil;
 import com.pointim.utils.StringUtils;
+import com.pointim.utils.WorkQueue;
 import com.pointim.view.fragment.CenterFragment;
 import com.pointim.view.fragment.ChatFragment;
 import com.pointim.view.fragment.FriendsFragment;
@@ -25,10 +28,13 @@ import org.jivesoftware.smack.chat.ChatManagerListener;
 import org.jivesoftware.smack.chat.ChatMessageListener;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Created by Admin on 2016/1/27.
+ * Created by Eric on 2016/5/15.
  */
 public class MainActivity extends FragmentActivity {
     private LinearLayout btChat, btList, btCenter;
@@ -45,15 +51,22 @@ public class MainActivity extends FragmentActivity {
             {R.mipmap.bt_list,R.mipmap.bt_list},
             {R.mipmap.bt_center, R.mipmap.bt_center}};
 
+    //储存聊天记录，用户jid为key，list保存记录
+    public static Map<String, List<ChatParam>> chatRecord;
+
     //聊天监听器
     public static ChatManagerListener chatManagerListener;
 
+    //线程池
+    public static WorkQueue workQueue;
+
+    //接收消息的处理器
     public static Handler chatHandler = new Handler() {
         @Override
         public void handleMessage(Message message) {
             super.handleMessage(message);
 
-            org.jivesoftware.smack.packet.Message param = (org.jivesoftware.smack.packet.Message) message.obj;
+            ChatParam param = (ChatParam) message.obj;
             switch(message.what) {
                 //有内容
                 case 1:
@@ -61,24 +74,36 @@ public class MainActivity extends FragmentActivity {
                     //正在聊天
                     if(ChatActivity.isActive) {
                         //当前聊天的对象和接收到数据的对象一致
-                        if (param.getFrom().startsWith(ChatActivity.chatJid)) {
+                        if (param.getFriendChatJid().startsWith(ChatActivity.chatJid)) {
                             //将新信息添加进聊天框中
-                            Log.e("Chat", "1111111111111111111111111111");
                             Log.e("Chat", param.getBody());
+                            addChatParm(param, ChatActivity.handler);
                         } else {
                             //在聊天列表中添加新信息提醒
-                            Log.e("Chat", "22222222222222222222222222222");
+                            addChatParm(param);
+                            //此时应该提示用户有新消息
+                            if(FriendsFragment.isEx) {
+                                String username = param.getFriendChatJid().replace("@admin-pc/Spark", "");
+                                Log.e("Chat", "username is " + username);
+                                FriendsFragment.setFriendStatus(username);
+                            }
                         }
                     } else {
                         //在聊天列表中添加新信息提醒
-                        Log.e("Chat", "22222222222222222222222222222");
+                        addChatParm(param);
+                        //此时应该提示用户有新消息
+                        if(FriendsFragment.isEx) {
+                            String username = param.getFriendChatJid().replace("@admin-pc/Spark", "");
+                            Log.e("Chat", "username is " + username);
+                            FriendsFragment.setFriendStatus(username);
+                        }
                     }
                     break;
                 //无内容
                 case 0:
                     if(ChatActivity.isActive) {
                         //当前聊天的对象和接收到数据的对象一致
-                        if (param.getFrom().startsWith(ChatActivity.chatJid)) {
+                        if (param.getFriendChatJid().startsWith(ChatActivity.chatJid)) {
                             //提示对方正在输入
                             Log.e("Chat", "33333333333333333333333333333333333");
                         } else {
@@ -97,35 +122,11 @@ public class MainActivity extends FragmentActivity {
         setContentView(R.layout.activity_main);
         //getWindow().setFormat(PixelFormat.TRANSLUCENT);
         //获取FragmentManager实例
+        chatRecord = new HashMap<String, List<ChatParam>>();
         fgManager = getSupportFragmentManager();
+        workQueue = new WorkQueue(10);//初始化线程池
         init();
         initListener();
-        LoginIn();
-
-        btChat.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                switchFragment(0);
-                //changeRadioButtonImage(v.getId());
-            }
-        });
-        btList.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                switchFragment(1);
-                //changeRadioButtonImage(v.getId());
-            }
-        });
-        btCenter.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                switchFragment(2);
-            }
-        });
-
-
     }
 
     @Override
@@ -133,6 +134,9 @@ public class MainActivity extends FragmentActivity {
         super.onDestroy();
         //去除监听类
         SmackManager.getInstance().getChatManager().removeChatListener(chatManagerListener);
+        //清空数据
+        chatRecord.clear();
+        chatRecord = null;
     }
 
     // 初始化信息
@@ -221,35 +225,32 @@ public class MainActivity extends FragmentActivity {
     }
 
     /**
-     * 后台登录
-     */
-    private void LoginIn() {
-        /*Intent intent = new Intent(LoginActivity.this, FragmentAct.class);
-        startActivity(intent);*/
-        /*LoginParam loginParam = OverallApplication.getLoginParam();
-        if(loginParam != null && !StringUtils.isBlank(loginParam.getUsername()) && !StringUtils.isBlank(loginParam.getPassword())) {
-            Log.e("Login", "开始登陆");
-            UserContorller.loginToMain(loginParam, new Observer() {
-                @Override
-                public void update(Observable observable, Object o) {
-                    //这里写数据返回之后的逻辑
-                    UserInfo r = (UserInfo) o;
-                    if (o != null && r != null && r.isStatus()) {
-                        OverallApplication.userinfo = r.getData();
-                        if(PersonalCenter.isExample) {
-                            PersonalCenter.updateHandler.sendMessage(new Message());
-                        }
-                        savePush();
-                    }
-                }
-            });
-        }*/
-    }
-
-    /**
      * 初始化监听器
      */
     public void initListener() {
+        btChat.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                switchFragment(0);
+                //changeRadioButtonImage(v.getId());
+            }
+        });
+        btList.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switchFragment(1);
+                //changeRadioButtonImage(v.getId());
+            }
+        });
+        btCenter.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                switchFragment(2);
+            }
+        });
+
         chatManagerListener = new ChatManagerListener() {
             @Override
             public void chatCreated(Chat chat, boolean createdLocally) {
@@ -264,7 +265,13 @@ public class MainActivity extends FragmentActivity {
                         } else {
                             msg.what = 1;
                         }
-                        msg.obj = message;
+                        ChatParam param = new ChatParam();
+                        param.setBody(message.getBody());
+                        param.setFriendChatJid(message.getFrom());
+                        param.setType(message.getType());
+                        param.setTo(message.getTo());
+                        param.setDatetime(new Date());
+                        msg.obj = param;
                         //发送通知，让程序处理消息
                         chatHandler.sendMessage(msg);
                     }
@@ -273,6 +280,24 @@ public class MainActivity extends FragmentActivity {
         };
         SmackManager.getInstance().getChatManager().addChatListener(chatManagerListener);
     }
+    /**
+     * 将聊天数据存入聊天记录中
+     * @param param
+     */
+    public static void addChatParm(ChatParam param) {
+        String chatjid = param.getFriendChatJid().replace("/Spark", "");
+        AddChatParamTask addtask = new AddChatParamTask(chatjid, param);
+        workQueue.execute(addtask);
+    }
 
+    /**
+     * 将聊天数据存入聊天记录中
+     * @param param
+     */
+    public static void addChatParm(ChatParam param, Handler handler) {
+        String chatjid = param.getFriendChatJid().replace("/Spark", "");
+        AddChatParamTask addtask = new AddChatParamTask(chatjid, param, handler);
+        workQueue.execute(addtask);
+    }
 }
 

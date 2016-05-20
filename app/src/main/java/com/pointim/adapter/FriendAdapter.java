@@ -47,6 +47,7 @@ public class FriendAdapter extends BaseAdapter {
         AddFriend viewTag;
         TextView nickName;
         TextView username;
+        TextView hasMessage;
 
         convertView = mInflater.inflate(R.layout.item_friend, null);
         // construct an item tag
@@ -60,6 +61,10 @@ public class FriendAdapter extends BaseAdapter {
                 nickName.setText(viewTag.getRemark());
             username = (TextView) convertView.findViewById(R.id.username);
             username.setText(viewTag.getUsername());
+            hasMessage = (TextView) convertView.findViewById(R.id.has_message);
+            //设置影藏显示
+            if (viewTag.isHasMessage()) hasMessage.setVisibility(View.VISIBLE);
+            else hasMessage.setVisibility(View.GONE);
         } catch (Exception e) {
             e.printStackTrace();
         }

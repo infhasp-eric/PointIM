@@ -46,7 +46,7 @@ public class SmackManager {
 	/**
 	 * Xmpp服务器地址
 	 */
-	public static final String SERVER_IP = "10.0.0.3";
+	public static final String SERVER_IP = "192.168.0.103";
     /**
      * Xmpp 服务器端口
      */
@@ -54,7 +54,7 @@ public class SmackManager {
     /**
      * 服务器名称
      */
-    public static final String SERVER_NAME = "point-im-server";
+    public static String SERVER_NAME = "point-im-server";
     /**
      * 
      */
@@ -106,6 +106,7 @@ public class SmackManager {
         	
         	XMPPTCPConnection connection = new XMPPTCPConnection(config);
             connection.connect();
+			SERVER_NAME = connection.getServiceName();
             return connection;
         } catch (Exception e) {
         	return null;
@@ -393,6 +394,7 @@ public class SmackManager {
 				return true;
 			} catch (NotLoggedInException | NoResponseException
 					| XMPPErrorException | NotConnectedException e) {
+				e.printStackTrace();
 				return false;
 			}
     	}

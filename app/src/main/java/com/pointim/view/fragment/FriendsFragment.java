@@ -22,7 +22,9 @@ import com.pointim.view.activity.SearchFriendActivity;
 import org.jivesoftware.smack.roster.RosterEntry;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.ExecutionException;
@@ -31,7 +33,12 @@ import java.util.concurrent.ExecutionException;
  * Created by Eric on 2016/5/14.
  */
 public class FriendsFragment extends Fragment {
+    public static boolean isEx = false;
+
+    //adapter的列表
     private static List<AddFriend> friendList = new ArrayList<AddFriend>();
+    //好友信息
+    private static Map<String, AddFriend> friendMap;
     private PullToRefreshListView listView;
     private static FriendAdapter friendAdapter;
 
@@ -55,15 +62,16 @@ public class FriendsFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         try {
+            friendMap = new HashMap<String, AddFriend>();
             initView(view);
             getAllFriends();
+            isEx = true;
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     private void initView(View view) {
-        Log.e("Friend", "111111111111111111111111111111111111");
         listView = (PullToRefreshListView) view.findViewById(R.id.friends_list);
         friendAdapter = new FriendAdapter(getActivity().getApplicationContext(), friendList);
         listView.setAdapter(friendAdapter);
@@ -72,10 +80,12 @@ public class FriendsFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 AddFriend friend = (AddFriend) view.getTag();
+                friend.setHasMessage(false);
                 Intent intent = new Intent(getActivity(), ChatActivity.class);
                 intent.putExtra("user", friend.getUsername());
                 intent.putExtra("nickname", friend.getNickname());
                 startActivity(intent);
+                upHandler.sendMessage(new Message());
             }
         });
 
@@ -88,6 +98,9 @@ public class FriendsFragment extends Fragment {
         });
     }
 
+    /**
+     * 获取所有好友列表
+     */
     public static void getAllFriends() {
         FriendsController.getAllFriends(new Observer() {
             @Override
@@ -100,10 +113,31 @@ public class FriendsFragment extends Fragment {
                     friend.setRemark(re.getName());
                     friend.setUsername(re.getUser());
                     friendList.add(friend);
+                    friendMap.put(friend.getUsername(), friend);
                     //Log.e("Friend", re.getName());
                 }
                 upHandler.sendMessage(new Message());
             }
         });
+    }
+
+    /**
+     * 设置好友是否有数据
+     */
+    public static void setFriendStatus(String username) {
+        try {
+            AddFriend af = friendMap.get(username);
+            af.setHasMessage(true);
+            upHandler.sendMessage(new Message());
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        friendMap = null;
+        isEx = false;
     }
 }
