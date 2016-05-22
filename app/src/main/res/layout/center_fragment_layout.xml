@@ -27,5 +27,30 @@
             android:src="@drawable/add_friend"/>
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"></LinearLayout>
+
+        <TextView
+            android:id="@+id/about"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            style="@style/center_item"
+            android:text="关于" />
+
+        <TextView
+            android:id="@+id/login_out"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            style="@style/center_item"
+            android:text="注销" />
+    </LinearLayout>
+
 
 </LinearLayout>

@@ -1,13 +1,17 @@
 package com.pointim.view.activity;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.widget.ListView;
 
@@ -50,6 +54,8 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
     public static boolean isActive = false;//聊天窗口是否已创建
     public static String chatJid;//记录当前正在聊天对象的id
     public List<ChatParam> chatParams;
+
+    public static int WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 1;
 
     /**
      * 聊天内容展示列表
@@ -104,6 +110,7 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
         isActive = true;
 
         mChatKyboard.setChatKeyboardOperateListener(this);
+        mChatKyboard.setActivity(this);
         friendRosterUser = getIntent().getStringExtra("user");
         friendNickname = getIntent().getStringExtra("nickname");
 
@@ -145,11 +152,12 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
         param.setBody(message);
         param.setTo(chatJid);
         param.setFriendChatJid(chatJid);
+        param.setMessage_type(ChatParam.MESSAGE_TYPE_TEXT);
         ChatController.sendMessage(chat, param, new Observer() {
             @Override
             public void update(Observable observable, Object data) {
                 ChatParam param1 = (ChatParam) data;
-                MainActivity.addChatParm(param1, handler);
+                ChatUtils.addChatParm(param1, handler);
             }
         });
     }
@@ -158,16 +166,6 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
     public static Handler handler = new Handler() {
         public void handleMessage(android.os.Message msg) {
             mAdapter.notifyDataSetChanged();
-            Log.e("Chat", "ChatAct chatJid is " + chatJid);
-            Log.e("Chat", "Size is " + MainActivity.chatRecord.get(chatJid).size());
-/*            switch(msg.what) {
-                case 1:
-                    mAdapter.notifyDataSetChanged();
-                    break;
-                case 2:
-                    mAdapter.notifyDataSetChanged();
-                    break;
-            }*/
         };
     };
 
@@ -175,35 +173,24 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
      * 发送文件
      * @param file
      */
-    public void sendFile(final File file, int type) {
-        final OutgoingFileTransfer transfer = SmackManager.getInstance().getSendFileTransfer(sendUser);
-        try {
-            transfer.sendFile(file, String.valueOf(type));
-            checkTransferStatus(transfer, file, type, true);
-        } catch (SmackException e) {
-            e.printStackTrace();
-        }
+    public void sendFile(final File file, final int type) {
+        Log.e("sendFile", sendUser);
+        ChatController.sendFile(file, type, sendUser, new Observer() {
+            @Override
+            public void update(Observable observable, Object data) {
+                if(data != null) {
+                    OutgoingFileTransfer transfer = (OutgoingFileTransfer) data;
+                    checkTransferStatus(transfer, file, type, true);
+                }
+            }
+        });
     }
 
     /**
      * 接收文件
      */
     public void receiveFile() {
-        SmackManager.getInstance().addFileTransferListener(new FileTransferListener() {
-            @Override
-            public void fileTransferRequest(FileTransferRequest request) {
-                // Accept it
-                IncomingFileTransfer transfer = request.accept();
-                try {
-                    String type = request.getDescription();
-                    File file = new File(fileDir ,request.getFileName());
-                    transfer.recieveFile(file);
-                    checkTransferStatus(transfer, file, Integer.parseInt(type), false);
-                } catch (SmackException | IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+
     }
 
     /**
@@ -214,6 +201,7 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
      * @param isSend	是否为发送
      */
     public void checkTransferStatus(final FileTransfer transfer, final File file, final int type, final boolean isSend) {
+        Log.e("运行到这里", "运行到这里");
         String username = friendNickname;
         if(isSend) {
             username = currNickname;
@@ -235,17 +223,22 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
                     }
                 }
                 if(FileTransfer.Status.complete.equals(transfer.getStatus())) {//传输完成
+                    Log.e("chat", "文件传输完成");
                     msg.setLoadState(1);
                     handler.obtainMessage(2, msg).sendToTarget();
                 } else if(FileTransfer.Status.cancelled.equals(transfer.getStatus())) {
+                    Log.e("chat", "文件传输取消");
                     //传输取消
                     msg.setLoadState(-1);
                     handler.obtainMessage(2, msg).sendToTarget();
                 } else if(FileTransfer.Status.error.equals(transfer.getStatus())) {
+                    Log.e("chat", "文件传输错误" + transfer.getException().getMessage());
+                    transfer.getException().printStackTrace();
                     //传输错误
                     msg.setLoadState(-1);
                     handler.obtainMessage(2, msg).sendToTarget();
                 } else if(FileTransfer.Status.refused.equals(transfer.getStatus())) {
+                    Log.e("chat", "文件传输拒绝");
                     //传输拒绝
                     msg.setLoadState(-1);
                     handler.obtainMessage(2, msg).sendToTarget();
@@ -267,11 +260,50 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
      */
     @Override
     public void sendVoice(File audioFile) {
+        //发送文件
+        Log.e("chat", "这里在发送文件了" + audioFile.length());
+        ChatParam param = new ChatParam();
+        param.setFile_path(audioFile.getPath());
+        param.setFriendChatJid(sendUser);
+        param.setMessage_type(ChatParam.TYPE_SOUND);
+        param.setSend(true);
+        param.setDatetime(new Date());
+        param.setFinish(false);
+        android.os.Message msg = new android.os.Message();
+        msg.obj = param;
+        msg.what = 1;
+        MainActivity.chatHandler.sendMessage(msg);
         sendFile(audioFile, com.pointim.model.Message.MESSAGE_TYPE_VOICE);
     }
 
     @Override
     public void recordStart() {
+    }
+
+    /**
+     * 获取权限回调
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        doNext(requestCode,grantResults);
+    }
+
+    private void doNext(int requestCode, int[] grantResults) {
+        if (requestCode == WRITE_EXTERNAL_STORAGE_REQUEST_CODE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission Granted
+                if(mChatKyboard.getChatKeyboardOperateListener() != null) {
+                    Log.e("Chat", "running here");
+                    mChatKyboard.getChatKeyboardOperateListener().recordStart();
+                }
+            } else {
+                // Permission Denied
+            }
+        }
     }
 
     /**

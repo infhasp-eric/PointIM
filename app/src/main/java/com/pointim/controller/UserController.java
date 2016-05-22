@@ -35,8 +35,12 @@ public class UserController {
                     result.setFlag(flag);
                 } catch (Exception e) {
                     e.printStackTrace();
-                    result.setFlag(false);
-                    result.setMessage(e.getMessage());
+                    if(e.getMessage().equals("Client is already logged in")) {
+                        result.setFlag(true);
+                    } else {
+                        result.setFlag(false);
+                        result.setMessage(e.getMessage());
+                    }
                 } finally {
                     observer.update(null, result);
                 }
@@ -47,12 +51,14 @@ public class UserController {
     /**
      * 注销账号
      */
-    public static void userLogout() {
+    public static void userLogout(final Observer observer) {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 boolean flag = SmackManager.getInstance().logout();
                 SmackManager.getInstance().disconnect();
+                if(observer != null)
+                    observer.update(null, flag);
             }
         }).start();
     }
@@ -68,7 +74,8 @@ public class UserController {
             public void run() {
                 Log.e("Regist", "2222222222222222222222222222222");
                 Map<String, String> attributes = new HashMap<>();
-                attributes.put("name", param.getNickname());
+                attributes.put("Name", param.getNickname());
+                Log.e("Regist", "username:" + param.getUsername() + "|password:" + param.getPassword());
                 final boolean flag = SmackManager.getInstance().registerUser(param.getUsername(), param.getPassword(), attributes);
                 Log.e("Regist", "2222222222222222222222222222222" + flag);
                 ResultParam param = new ResultParam();

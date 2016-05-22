@@ -83,6 +83,7 @@ public class LoginActivity extends AppCompatActivity {
                 if(result.isFlag()) {
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                     startActivity(intent);
+                    finish();
                 } else {
                     Message message = new Message();
                     message.obj = result.getMessage();

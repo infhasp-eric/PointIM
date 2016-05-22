@@ -11,6 +11,7 @@ import com.nostra13.universalimageloader.core.assist.QueueProcessingType;
 import com.pointim.controller.UserController;
 import com.pointim.smack.SmackManager;
 import com.pointim.utils.DateUtil;
+import com.pointim.view.activity.ChatActivity;
 
 import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManagerListener;
@@ -18,6 +19,8 @@ import org.jivesoftware.smack.chat.ChatMessageListener;
 import org.jivesoftware.smack.packet.Message;
 
 import java.util.Date;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * Created by Eric on 2016/5/14.
@@ -46,10 +49,9 @@ public class MyApplication extends Application {
     public void onTerminate() {
         // 程序终止的时候执行
         Log.d(TAG, "onTerminate");
-
+        ChatActivity.isActive = false;
         //在程序退出时注销账号
-        UserController.userLogout();
-
+        UserController.userLogout(null);
         super.onTerminate();
     }
 }

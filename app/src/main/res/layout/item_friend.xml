@@ -36,6 +36,7 @@
             android:layout_weight="1"
             android:textSize="17sp"
             android:textColor="#ff0000"
+            android:visibility="gone"
             android:text="(新消息)"/>
 
     </LinearLayout>

@@ -37,6 +37,7 @@ public class AddChatParamTask implements Runnable{//任务接口
         List<ChatParam> chatParamList = ChatUtils.getChatParams(chatjid);
         chatParamList.add(chatParam);
         System.out.println(String.format("Thread %s: ChatParam %s is add in %s on %s",  name,chatParam.getBody(), chatjid, (new Date()).toString()));
+        ChatUtils.addNewHistoryChat(chatjid);
         if(handler != null) {
             handler.sendMessage(new Message());
         }

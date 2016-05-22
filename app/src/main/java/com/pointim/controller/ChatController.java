@@ -6,7 +6,9 @@ import com.pointim.utils.DateUtil;
 
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.chat.Chat;
+import org.jivesoftware.smackx.filetransfer.OutgoingFileTransfer;
 
+import java.io.File;
 import java.util.Date;
 import java.util.Observer;
 
@@ -35,7 +37,21 @@ public class ChatController {
                 }
             };
         }.start();
+    }
 
+    public static void sendFile(final File file, final int type, final String sendUser, final Observer observer) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final OutgoingFileTransfer transfer = SmackManager.getInstance().getSendFileTransfer(sendUser);
+                try {
+                    transfer.sendFile(file, String.valueOf(type));
+                    observer.update(null, transfer);
+                } catch (SmackException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
 }

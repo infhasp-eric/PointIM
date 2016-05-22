@@ -36,7 +36,7 @@ public class FriendsFragment extends Fragment {
     public static boolean isEx = false;
 
     //adapter的列表
-    private static List<AddFriend> friendList = new ArrayList<AddFriend>();
+    public static List<AddFriend> friendList = new ArrayList<AddFriend>();
     //好友信息
     private static Map<String, AddFriend> friendMap;
     private PullToRefreshListView listView;
@@ -124,7 +124,7 @@ public class FriendsFragment extends Fragment {
     /**
      * 设置好友是否有数据
      */
-    public static void setFriendStatus(String username) {
+    /*public static void setFriendStatus(String username) {
         try {
             AddFriend af = friendMap.get(username);
             af.setHasMessage(true);
@@ -132,7 +132,7 @@ public class FriendsFragment extends Fragment {
         } catch (NullPointerException e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
     @Override
     public void onDestroy() {

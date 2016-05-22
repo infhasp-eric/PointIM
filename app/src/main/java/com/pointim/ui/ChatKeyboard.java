@@ -1,10 +1,15 @@
 package com.pointim.ui;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
@@ -17,12 +22,18 @@ import com.pointim.R;
 import com.pointim.inject.InjectHelper;
 import com.pointim.inject.annotation.InjectView;
 import com.pointim.utils.StringUtils;
+import com.pointim.view.activity.ChatActivity;
 
 import java.io.File;
 
 public class ChatKeyboard extends RelativeLayout implements
 			SoftKeyboardStateHelper.SoftKeyboardStateListener {
 	private Context context;
+	private Activity activity;
+
+	public void setActivity(Activity activity) {
+		this.activity = activity;
+	}
 	
 	/**
 	 * 软键盘监听助手
@@ -314,8 +325,17 @@ public class ChatKeyboard extends RelativeLayout implements
 		}
 		
 		public void recordStart() {
-			if(listener != null) {
-				listener.recordStart();
+			//请求响应的权限
+			if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)
+					!= PackageManager.PERMISSION_GRANTED) {
+				//申请WRITE_EXTERNAL_STORAGE权限
+				ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+						ChatActivity.WRITE_EXTERNAL_STORAGE_REQUEST_CODE);
+			} else {
+				if(listener != null) {
+					//开始录音
+					listener.recordStart();
+				}
 			}
 		};
 	};

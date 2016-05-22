@@ -2,6 +2,7 @@ package com.pointim.adapter;
 
 import android.app.Activity;
 import android.graphics.drawable.AnimationDrawable;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.view.View;
 import android.view.ViewGroup;
@@ -137,23 +138,24 @@ public class ChatAdapter extends BaseAdapter {
 			viewHolder.chatContentTime.setText(DateUtil.formatDate(message.getDatetime()));
 			viewHolder.chatContentTime.setVisibility(View.VISIBLE);
 		}
-		setMessageViewVisible(1, viewHolder);
+		setMessageViewVisible(message.getMessage_type(), viewHolder);
 		viewHolder.chatContentText.setText(message.getBody());
 
-		/*if(message.getType() == Message.MESSAGE_TYPE_TEXT) {//文本消息
-		} else if(message.getType() == Message.MESSAGE_TYPE_IMAGE) {//图片消息
-			String url = "file://" + message.getFilePath();
-			ImageLoader.getInstance().displayImage(url, viewHolder.chatContentImage, options, new SimpleImageLoadingListener());
-			showLoading(viewHolder, message);
-		} else if(message.getType() == Message.MESSAGE_TYPE_VOICE) {//语音消息
+		if(message.getMessage_type() == ChatParam.MESSAGE_TYPE_TEXT) {//文本消息
+
+		} else if(message.getMessage_type() == ChatParam.TYPE_SOUND) {//语音消息
 			viewHolder.chatContentVoice.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View v) {
-					playVoice(viewHolder.chatContentVoice, message);
+					playVoice(viewHolder.chatContentVoice, message.isSend(), message.getFile_path());
 				}
 			});
+			//showLoading(viewHolder, message);
+		} /*else if(message.getType() == Message.MESSAGE_TYPE_IMAGE) {//图片消息
+			String url = "file://" + message.getFilePath();
+			ImageLoader.getInstance().displayImage(url, viewHolder.chatContentImage, options, new SimpleImageLoadingListener());
 			showLoading(viewHolder, message);
-		}*/
+		} */
 		return convertView;
 	}
 	
@@ -189,44 +191,45 @@ public class ChatAdapter extends BaseAdapter {
 			viewHolder.chatContentText.setVisibility(View.VISIBLE);
 			viewHolder.chatContentImage.setVisibility(View.GONE);
 			viewHolder.chatContentVoice.setVisibility(View.GONE);
-		}/* else if(type == Message.MESSAGE_TYPE_IMAGE) {//图片消息
+		} else if(type == ChatParam.TYPE_IMAGE) {//图片消息
 			viewHolder.chatContentText.setVisibility(View.GONE);
 			viewHolder.chatContentImage.setVisibility(View.VISIBLE);
 			viewHolder.chatContentVoice.setVisibility(View.GONE);
-		} else if(type == Message.MESSAGE_TYPE_VOICE) {//语音消息
+		} else if(type == ChatParam.TYPE_SOUND) {//语音消息
 			viewHolder.chatContentText.setVisibility(View.GONE);
 			viewHolder.chatContentImage.setVisibility(View.GONE);
 			viewHolder.chatContentVoice.setVisibility(View.VISIBLE);
-		}*/
+		}
 	}
 
 	/**
 	 * 播放语音信息
 	 * @param iv
-	 * @param message
-	 */
-	private void playVoice(final ImageView iv, final Message message) {
-		if(message.isSend()) {
+	 * @param isSend
+	 * @param file_path
+     */
+	private void playVoice(final ImageView iv, final boolean isSend, final String file_path) {
+		if(isSend) {
 			iv.setBackgroundResource(R.drawable.gxx);
 		} else {
 			iv.setBackgroundResource(R.drawable.gxu);
 		}
-		final AnimationDrawable animationDrawable =(AnimationDrawable)iv.getBackground();
-		iv.post(new Runnable() {
+		final Drawable animationDrawable = iv.getBackground();
+		/*iv.post(new Runnable() {
 		    @Override
 	        public void run()  {
 	            animationDrawable.start();
 	        }
-		});
+		});*/
 		if (mediaPlayer == null || !mediaPlayer.isPlaying()) {//点击播放，再次点击停止播放
 			// 开始播放录音
 			mediaPlayer = new MediaPlayer();
 			mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
 				@Override
 				public void onCompletion(MediaPlayer mp) {
-					animationDrawable.stop();
+					//animationDrawable.stop();
 					// 恢复语音消息图标背景
-					if(message.isSend()) {
+					if(isSend) {
 						iv.setBackgroundResource(R.drawable.gxu);
 					} else {
 						iv.setBackgroundResource(R.drawable.gxx);
@@ -235,7 +238,7 @@ public class ChatAdapter extends BaseAdapter {
 			});
 			try {
 				mediaPlayer.reset();
-				mediaPlayer.setDataSource(message.getFilePath());
+				mediaPlayer.setDataSource(file_path);
 				mediaPlayer.prepare();
 				mediaPlayer.start();
 			} catch (IllegalArgumentException e) {
@@ -246,9 +249,9 @@ public class ChatAdapter extends BaseAdapter {
 				e.printStackTrace();
 			}
 		} else {
-			animationDrawable.stop();
+			//animationDrawable.stop();
 			// 恢复语音消息图标背景
-			if(message.isSend()) {
+			if(isSend) {
 				iv.setBackgroundResource(R.drawable.gxu);
 			} else {
 				iv.setBackgroundResource(R.drawable.gxx);

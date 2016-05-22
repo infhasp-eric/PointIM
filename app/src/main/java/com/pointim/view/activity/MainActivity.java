@@ -13,25 +13,39 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import com.pointim.R;
+import com.pointim.controller.FriendsController;
+import com.pointim.controller.UserController;
+import com.pointim.model.AddFriend;
 import com.pointim.model.ChatParam;
 import com.pointim.smack.SmackManager;
 import com.pointim.task.AddChatParamTask;
+import com.pointim.utils.ChatUtils;
 import com.pointim.utils.DateUtil;
+import com.pointim.utils.SdCardUtil;
 import com.pointim.utils.StringUtils;
 import com.pointim.utils.WorkQueue;
 import com.pointim.view.fragment.CenterFragment;
 import com.pointim.view.fragment.ChatFragment;
 import com.pointim.view.fragment.FriendsFragment;
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManagerListener;
 import org.jivesoftware.smack.chat.ChatMessageListener;
+import org.jivesoftware.smackx.filetransfer.FileTransfer;
+import org.jivesoftware.smackx.filetransfer.FileTransferListener;
+import org.jivesoftware.smackx.filetransfer.FileTransferRequest;
+import org.jivesoftware.smackx.filetransfer.IncomingFileTransfer;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * Created by Eric on 2016/5/15.
@@ -51,6 +65,8 @@ public class MainActivity extends FragmentActivity {
             {R.mipmap.bt_list,R.mipmap.bt_list},
             {R.mipmap.bt_center, R.mipmap.bt_center}};
 
+    private String fileDir;
+
     //储存聊天记录，用户jid为key，list保存记录
     public static Map<String, List<ChatParam>> chatRecord;
 
@@ -65,54 +81,8 @@ public class MainActivity extends FragmentActivity {
         @Override
         public void handleMessage(Message message) {
             super.handleMessage(message);
-
             ChatParam param = (ChatParam) message.obj;
-            switch(message.what) {
-                //有内容
-                case 1:
-                    //此时判断是否正在聊天
-                    //正在聊天
-                    if(ChatActivity.isActive) {
-                        //当前聊天的对象和接收到数据的对象一致
-                        if (param.getFriendChatJid().startsWith(ChatActivity.chatJid)) {
-                            //将新信息添加进聊天框中
-                            Log.e("Chat", param.getBody());
-                            addChatParm(param, ChatActivity.handler);
-                        } else {
-                            //在聊天列表中添加新信息提醒
-                            addChatParm(param);
-                            //此时应该提示用户有新消息
-                            if(FriendsFragment.isEx) {
-                                String username = param.getFriendChatJid().replace("@admin-pc/Spark", "");
-                                Log.e("Chat", "username is " + username);
-                                FriendsFragment.setFriendStatus(username);
-                            }
-                        }
-                    } else {
-                        //在聊天列表中添加新信息提醒
-                        addChatParm(param);
-                        //此时应该提示用户有新消息
-                        if(FriendsFragment.isEx) {
-                            String username = param.getFriendChatJid().replace("@admin-pc/Spark", "");
-                            Log.e("Chat", "username is " + username);
-                            FriendsFragment.setFriendStatus(username);
-                        }
-                    }
-                    break;
-                //无内容
-                case 0:
-                    if(ChatActivity.isActive) {
-                        //当前聊天的对象和接收到数据的对象一致
-                        if (param.getFriendChatJid().startsWith(ChatActivity.chatJid)) {
-                            //提示对方正在输入
-                            Log.e("Chat", "33333333333333333333333333333333333");
-                        } else {
-                            //不做任何操作
-                            break;
-                        }
-                    }
-                    break;
-            }
+            ChatUtils.notify(message.what, param);
         }
     };
 
@@ -125,6 +95,9 @@ public class MainActivity extends FragmentActivity {
         chatRecord = new HashMap<String, List<ChatParam>>();
         fgManager = getSupportFragmentManager();
         workQueue = new WorkQueue(10);//初始化线程池
+
+        fileDir = SdCardUtil.getCacheDir(getApplicationContext());
+
         init();
         initListener();
     }
@@ -133,7 +106,12 @@ public class MainActivity extends FragmentActivity {
     protected void onDestroy() {
         super.onDestroy();
         //去除监听类
-        SmackManager.getInstance().getChatManager().removeChatListener(chatManagerListener);
+        /*try {
+            SmackManager.getInstance().getChatManager().removeChatListener(chatManagerListener);
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }*/
+        UserController.userLogout(null);
         //清空数据
         chatRecord.clear();
         chatRecord = null;
@@ -160,8 +138,8 @@ public class MainActivity extends FragmentActivity {
         fragments.add(chatFragment);
         fragments.add(friendsFragment);
         fragments.add(centerFragment);
+        switchFragment(1);
         switchFragment(0);
-
     }
 
     //更改显示的fragment
@@ -268,9 +246,9 @@ public class MainActivity extends FragmentActivity {
                         ChatParam param = new ChatParam();
                         param.setBody(message.getBody());
                         param.setFriendChatJid(message.getFrom());
-                        param.setType(message.getType());
                         param.setTo(message.getTo());
                         param.setDatetime(new Date());
+                        param.setMessage_type(ChatParam.MESSAGE_TYPE_TEXT);
                         msg.obj = param;
                         //发送通知，让程序处理消息
                         chatHandler.sendMessage(msg);
@@ -279,25 +257,77 @@ public class MainActivity extends FragmentActivity {
             }
         };
         SmackManager.getInstance().getChatManager().addChatListener(chatManagerListener);
-    }
-    /**
-     * 将聊天数据存入聊天记录中
-     * @param param
-     */
-    public static void addChatParm(ChatParam param) {
-        String chatjid = param.getFriendChatJid().replace("/Spark", "");
-        AddChatParamTask addtask = new AddChatParamTask(chatjid, param);
-        workQueue.execute(addtask);
+        SmackManager.getInstance().addFileTransferListener(new FileTransferListener() {
+            @Override
+            public void fileTransferRequest(FileTransferRequest request) {
+                // Accept it
+                Log.e("Requestor", request.getRequestor());
+                IncomingFileTransfer transfer = request.accept();
+                try {
+                    String type = request.getDescription();
+                    File file = new File(fileDir ,request.getFileName());
+                    transfer.recieveFile(file);
+                    ChatUtils.checkTransferStatus(transfer, file.getPath(), Integer.parseInt(type), false, request.getRequestor());
+                } catch (SmackException | IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     /**
-     * 将聊天数据存入聊天记录中
-     * @param param
+     * 检查发送文件、接收文件的状态
+     * @param transfer
+     * @param file		发送或接收的文件
+     * @param type		文件类型，语音或图片
+     * @param isSend	是否为发送
      */
-    public static void addChatParm(ChatParam param, Handler handler) {
-        String chatjid = param.getFriendChatJid().replace("/Spark", "");
-        AddChatParamTask addtask = new AddChatParamTask(chatjid, param, handler);
-        workQueue.execute(addtask);
+    public void checkTransferStatus1(final FileTransfer transfer, final File file, final int type, final boolean isSend) {
+        Log.e("运行到这里", "运行到这里");
+        String username = "admin";//friendNickname;
+        /*if(isSend) {
+            username = currNickname;
+        }*/
+        final String name = username;
+        final com.pointim.model.Message msg = new com.pointim.model.Message(type, name, DateUtil.formatDatetime(new Date()), isSend);
+        msg.setFilePath(file.getAbsolutePath());
+        msg.setLoadState(0);
+        new Thread(){
+            public void run() {
+                if(transfer.getProgress() < 1) {//传输开始
+                    //handler.obtainMessage(1, msg).sendToTarget();
+                }
+                while(!transfer.isDone()) {
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if(FileTransfer.Status.complete.equals(transfer.getStatus())) {//传输完成
+                    Log.e("chat", "文件传输完成");
+                    msg.setLoadState(1);
+                    //handler.obtainMessage(2, msg).sendToTarget();
+                } else if(FileTransfer.Status.cancelled.equals(transfer.getStatus())) {
+                    Log.e("chat", "文件传输取消");
+                    //传输取消
+                    msg.setLoadState(-1);
+                    //handler.obtainMessage(2, msg).sendToTarget();
+                } else if(FileTransfer.Status.error.equals(transfer.getStatus())) {
+                    Log.e("chat", "文件传输错误" + transfer.getException().getMessage());
+                    transfer.getException().printStackTrace();
+                    //传输错误
+                    msg.setLoadState(-1);
+                    //handler.obtainMessage(2, msg).sendToTarget();
+                } else if(FileTransfer.Status.refused.equals(transfer.getStatus())) {
+                    Log.e("chat", "文件传输拒绝");
+                    //传输拒绝
+                    msg.setLoadState(-1);
+                    //handler.obtainMessage(2, msg).sendToTarget();
+                }
+            };
+        }.start();
     }
+
 }
 

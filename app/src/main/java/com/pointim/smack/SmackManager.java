@@ -6,6 +6,7 @@ import android.widget.Toast;
 import com.pointim.model.AddFriend;
 import com.pointim.model.FriendResult;
 
+import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
@@ -46,7 +47,7 @@ public class SmackManager {
 	/**
 	 * Xmpp服务器地址
 	 */
-	public static final String SERVER_IP = "192.168.0.103";
+	public static final String SERVER_IP = "10.0.0.4";
     /**
      * Xmpp 服务器端口
      */

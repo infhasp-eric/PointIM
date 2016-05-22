@@ -1,8 +1,12 @@
 package com.pointim.ui;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.media.MediaRecorder;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -75,6 +79,7 @@ public class PressSpeakView extends RelativeLayout {
 			case MotionEvent.ACTION_UP://松开手指
 				stopRecordVoice();
 				if(recordListener != null) {
+					Log.e("path", audioFile.getPath());
 					recordListener.recordFinish(audioFile);
 				}
 				break;
@@ -97,6 +102,7 @@ public class PressSpeakView extends RelativeLayout {
 	 */
 	private void startRecordVoice() {
 		try {
+			Log.e("Speak", "开始录音");
             recorder = new MediaRecorder();
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC); // 设置音频采集原
             recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);// 内容输出格式
