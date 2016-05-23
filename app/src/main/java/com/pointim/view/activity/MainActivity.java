@@ -32,6 +32,8 @@ import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManagerListener;
 import org.jivesoftware.smack.chat.ChatMessageListener;
+import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.roster.RosterListener;
 import org.jivesoftware.smackx.filetransfer.FileTransfer;
 import org.jivesoftware.smackx.filetransfer.FileTransferListener;
 import org.jivesoftware.smackx.filetransfer.FileTransferRequest;
@@ -40,6 +42,7 @@ import org.jivesoftware.smackx.filetransfer.IncomingFileTransfer;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -67,6 +70,10 @@ public class MainActivity extends FragmentActivity {
 
     private String fileDir;
 
+    //好友列表
+    public static List<AddFriend> friendList = new ArrayList<AddFriend>();
+    //好友信息
+    public static Map<String, AddFriend> friendMap;
     //储存聊天记录，用户jid为key，list保存记录
     public static Map<String, List<ChatParam>> chatRecord;
 
@@ -90,6 +97,8 @@ public class MainActivity extends FragmentActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        FriendsController.updateUserState(0);//修改状态为在线
+
         //getWindow().setFormat(PixelFormat.TRANSLUCENT);
         //获取FragmentManager实例
         chatRecord = new HashMap<String, List<ChatParam>>();
@@ -97,6 +106,13 @@ public class MainActivity extends FragmentActivity {
         workQueue = new WorkQueue(10);//初始化线程池
 
         fileDir = SdCardUtil.getCacheDir(getApplicationContext());
+
+        try {
+            friendMap = new HashMap<String, AddFriend>();
+            ChatUtils.getAllFriends(FriendsFragment.upHandler);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         init();
         initListener();
@@ -115,6 +131,8 @@ public class MainActivity extends FragmentActivity {
         //清空数据
         chatRecord.clear();
         chatRecord = null;
+        friendMap.clear();
+        friendMap = null;
     }
 
     // 初始化信息
@@ -273,60 +291,29 @@ public class MainActivity extends FragmentActivity {
                 }
             }
         });
-    }
+        //好友状态监听器
+        SmackManager.getInstance().getRoster().addRosterListener(new RosterListener(){
+            @Override
+            public void entriesAdded(Collection<String> addresses) {
 
-    /**
-     * 检查发送文件、接收文件的状态
-     * @param transfer
-     * @param file		发送或接收的文件
-     * @param type		文件类型，语音或图片
-     * @param isSend	是否为发送
-     */
-    public void checkTransferStatus1(final FileTransfer transfer, final File file, final int type, final boolean isSend) {
-        Log.e("运行到这里", "运行到这里");
-        String username = "admin";//friendNickname;
-        /*if(isSend) {
-            username = currNickname;
-        }*/
-        final String name = username;
-        final com.pointim.model.Message msg = new com.pointim.model.Message(type, name, DateUtil.formatDatetime(new Date()), isSend);
-        msg.setFilePath(file.getAbsolutePath());
-        msg.setLoadState(0);
-        new Thread(){
-            public void run() {
-                if(transfer.getProgress() < 1) {//传输开始
-                    //handler.obtainMessage(1, msg).sendToTarget();
-                }
-                while(!transfer.isDone()) {
-                    try {
-                        Thread.sleep(200);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                if(FileTransfer.Status.complete.equals(transfer.getStatus())) {//传输完成
-                    Log.e("chat", "文件传输完成");
-                    msg.setLoadState(1);
-                    //handler.obtainMessage(2, msg).sendToTarget();
-                } else if(FileTransfer.Status.cancelled.equals(transfer.getStatus())) {
-                    Log.e("chat", "文件传输取消");
-                    //传输取消
-                    msg.setLoadState(-1);
-                    //handler.obtainMessage(2, msg).sendToTarget();
-                } else if(FileTransfer.Status.error.equals(transfer.getStatus())) {
-                    Log.e("chat", "文件传输错误" + transfer.getException().getMessage());
-                    transfer.getException().printStackTrace();
-                    //传输错误
-                    msg.setLoadState(-1);
-                    //handler.obtainMessage(2, msg).sendToTarget();
-                } else if(FileTransfer.Status.refused.equals(transfer.getStatus())) {
-                    Log.e("chat", "文件传输拒绝");
-                    //传输拒绝
-                    msg.setLoadState(-1);
-                    //handler.obtainMessage(2, msg).sendToTarget();
-                }
-            };
-        }.start();
+            }
+
+            @Override
+            public void entriesUpdated(Collection<String> addresses) {
+
+            }
+
+            @Override
+            public void entriesDeleted(Collection<String> addresses) {
+
+            }
+
+            @Override
+            public void presenceChanged(Presence prsnc) {
+                System.out.println("Change: "+ prsnc.getFrom()+" status :"+prsnc.getStatus());
+            }
+        });
+
     }
 
 }

@@ -10,13 +10,16 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ListView;
 
 import com.handmark.pulltorefresh.library.PullToRefreshListView;
 import com.pointim.R;
 import com.pointim.adapter.FriendAdapter;
 import com.pointim.controller.FriendsController;
 import com.pointim.model.AddFriend;
+import com.pointim.utils.ChatUtils;
 import com.pointim.view.activity.ChatActivity;
+import com.pointim.view.activity.MainActivity;
 import com.pointim.view.activity.SearchFriendActivity;
 
 import org.jivesoftware.smack.roster.RosterEntry;
@@ -35,17 +38,14 @@ import java.util.concurrent.ExecutionException;
 public class FriendsFragment extends Fragment {
     public static boolean isEx = false;
 
-    //adapter的列表
-    public static List<AddFriend> friendList = new ArrayList<AddFriend>();
-    //好友信息
-    private static Map<String, AddFriend> friendMap;
-    private PullToRefreshListView listView;
+    private ListView listView;
     private static FriendAdapter friendAdapter;
 
     public static Handler upHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
+            if(isEx)
             friendAdapter.notifyDataSetChanged();
         }
     };
@@ -61,19 +61,13 @@ public class FriendsFragment extends Fragment {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        try {
-            friendMap = new HashMap<String, AddFriend>();
-            initView(view);
-            getAllFriends();
-            isEx = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        initView(view);
+        isEx = true;
     }
 
     private void initView(View view) {
-        listView = (PullToRefreshListView) view.findViewById(R.id.friends_list);
-        friendAdapter = new FriendAdapter(getActivity().getApplicationContext(), friendList);
+        listView = (ListView) view.findViewById(R.id.friends_list);
+        friendAdapter = new FriendAdapter(getActivity().getApplicationContext(), MainActivity.friendList);
         listView.setAdapter(friendAdapter);
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -87,6 +81,52 @@ public class FriendsFragment extends Fragment {
                 startActivity(intent);
                 upHandler.sendMessage(new Message());
             }
+
+        });
+
+        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            private View delview;
+
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, final int position, long id) {
+                AddFriend af = (AddFriend) view.getTag();
+                Log.e("Friend", "username" + af.getUsername());
+                FriendsController.deleteFriend(af.getUsername(), new Observer() {
+                    @Override
+                    public void update(Observable observable, Object data) {
+                        ChatUtils.getAllFriends(upHandler);
+                    }
+                });
+                return true;
+                /*if (lastPress < parent.getCount()) {
+                    delview = parent.getChildAt(lastPress).findViewById(R.id.linear_del);
+                    if (null != delview) {
+                        delview.setVisibility(View.GONE);
+                    }
+                }
+
+                delview = view.findViewById(R.id.linear_del);
+                delview.setVisibility(View.VISIBLE);
+
+                delview.findViewById(R.id.tv_del).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        delview.setVisibility(View.GONE);
+                        curList.remove(position);
+                        adapter.notifyDataSetChanged();
+                    }
+                });
+                delview.findViewById(R.id.tv_cancel).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        delview.setVisibility(View.GONE);
+                    }
+                });
+
+                lastPress = position;
+                delState = true;
+                return true;*/
+            }
         });
 
         view.findViewById(R.id.add_friend).setOnClickListener(new View.OnClickListener() {
@@ -94,29 +134,6 @@ public class FriendsFragment extends Fragment {
             public void onClick(View v) {
                 Intent intent = new Intent(getActivity(), SearchFriendActivity.class);
                 startActivity(intent);
-            }
-        });
-    }
-
-    /**
-     * 获取所有好友列表
-     */
-    public static void getAllFriends() {
-        FriendsController.getAllFriends(new Observer() {
-            @Override
-            public void update(Observable observable, Object data) {
-                List<RosterEntry> list = (List<RosterEntry>) data;
-                friendList.clear();
-                AddFriend friend = null;
-                for (RosterEntry re : list) {
-                    friend = new AddFriend();
-                    friend.setRemark(re.getName());
-                    friend.setUsername(re.getUser());
-                    friendList.add(friend);
-                    friendMap.put(friend.getUsername(), friend);
-                    //Log.e("Friend", re.getName());
-                }
-                upHandler.sendMessage(new Message());
             }
         });
     }
@@ -137,7 +154,6 @@ public class FriendsFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        friendMap = null;
         isEx = false;
     }
 }

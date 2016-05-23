@@ -12,15 +12,19 @@ import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.SmackException.NotLoggedInException;
+import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManager;
+import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.filetransfer.FileTransferListener;
 import org.jivesoftware.smackx.filetransfer.FileTransferManager;
@@ -36,8 +40,7 @@ import org.jivesoftware.smackx.xdata.FormField;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,13 +63,15 @@ public class SmackManager {
      * 
      */
     public static final String XMPP_CLIENT = "Smack";
+
+	public static Roster roster;
     
     private static SmackManager xmppManager;
     /**
      * 连接
      */
     private XMPPTCPConnection connection;
-    
+
     private SmackManager() {
     	this.connection = connect();
 	}
@@ -163,12 +168,25 @@ public class SmackManager {
     	}
     	try {
 			AccountManager.getInstance(connection).deleteAccount();//删除该账号
+
 			return true;
 		} catch (NoResponseException | XMPPErrorException
 				| NotConnectedException e) {
 			return false;
 		}
     }
+
+	//删除某个好友
+	public boolean deleteFriend(String friendName){
+		boolean b=true;
+		Roster roster = getInstance().getRoster();
+		try {
+			roster.removeEntry(roster.getEntry(friendName));
+		} catch (Exception e) {
+			b=false;
+		}
+		return b;
+	}
     
     /**
      * 注册用户信息
@@ -254,21 +272,21 @@ public class SmackManager {
 	                connection.sendStanza(presence);  
 	                break;  
 	            case 4://设置隐身
-	//                Roster roster = connection.getRoster();  
-	//                Collection<RosterEntry> entries = roster.getEntries();  
-	//                for (RosterEntry entry : entries) {  
-	//                    presence = new Presence(Presence.Type.unavailable);  
-	//                    presence.setStanzaId(Stanza.ID_NOT_AVAILABLE);  
-	//                    presence.setFrom(connection.getUser());  
-	//                    presence.setTo(entry.getUser());  
-	//                    connection.sendStanza(presence);  
-	//                }
-	//                // 向同一用户的其他客户端发送隐身状态  
-	//                presence = new Presence(Presence.Type.unavailable);  
-	//                presence.setStanzaId(Packet.ID_NOT_AVAILABLE);  
-	//                presence.setFrom(connection.getUser());  
-	//                presence.setTo(StringUtils.parseBareAddress(connection.getUser()));  
-	//                connection.sendStanza(presence);
+	                /*Roster roster = getRoster();
+	                Collection<RosterEntry> entries = roster.getEntries();
+	                for (RosterEntry entry : entries) {
+	                    presence = new Presence(Presence.Type.unavailable);
+	                    presence.setStanzaId(Stanza.ID_NOT_AVAILABLE);
+	                    presence.setFrom(connection.getUser());
+	                    presence.setTo(entry.getUser());
+	                    connection.sendStanza(presence);
+	                }
+	                // 向同一用户的其他客户端发送隐身状态
+	                presence = new Presence(Presence.Type.unavailable);
+	                presence.setStanzaId(Packet.ID_NOT_AVAILABLE);
+	                presence.setFrom(connection.getUser());
+	                presence.setTo(StringUtils.parseBareAddress(connection.getUser()));
+	                connection.sendStanza(presence);*/
 	                break;  
 	            case 5://设置离线
 	                presence = new Presence(Presence.Type.unavailable);  
@@ -357,6 +375,16 @@ public class SmackManager {
     	}
     	throw new NullPointerException("服务器连接失败，请先连接服务器");
     }
+
+	public Roster getRoster() {
+		if (isConnected() && roster != null) {
+			return roster;
+		} else if(isConnected() && roster == null) {
+			roster = Roster.getInstanceFor(connection);
+			return roster;
+		}
+		throw new NullPointerException("服务器连接失败，请先连接服务器");
+	}
     
     /**
      * 获取当前登录用户的所有好友信息
@@ -562,6 +590,14 @@ public class SmackManager {
         }  
     }
 
+	/**
+	 * 搜索好友
+	 * @param userName
+	 * @return
+	 * @throws NotConnectedException
+	 * @throws XMPPErrorException
+	 * @throws NoResponseException
+     */
 	public List<AddFriend> searchUser(String userName) throws NotConnectedException, XMPPErrorException, NoResponseException {
 		List<AddFriend> results = new ArrayList<AddFriend>();
 		try {

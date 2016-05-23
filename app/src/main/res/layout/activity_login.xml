@@ -15,6 +15,20 @@
 
     <LinearLayout
         android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginTop="20dp">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="200dp"
+            android:src="@mipmap/the_ico"
+            android:layout_gravity="center"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
         <TextView
@@ -24,7 +38,7 @@
 
         <EditText
             android:id="@+id/username"
-            android:text="admin"
+            android:text="user01"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </LinearLayout>

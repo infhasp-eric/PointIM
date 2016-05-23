@@ -365,6 +365,7 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
                 Uri dataUri = data.getData();
                 if (dataUri != null) {
                     File file = FileUtil.uri2File(mContext, dataUri);
+                    ChatUtils.addImageChatParam(file.getPath(), sendUser);
                     sendFile(file, com.pointim.model.Message.MESSAGE_TYPE_IMAGE);
                 }
             }
@@ -381,6 +382,8 @@ public class ChatActivity extends BaseActivity implements ChatKeyboard.ChatKeybo
             bitmap.recycle();
             bitmap = null;
         }
+        ChatUtils.addImageChatParam(picPath, sendUser);
         sendFile(new File(picPath), com.pointim.model.Message.MESSAGE_TYPE_IMAGE);
     }
+
 }

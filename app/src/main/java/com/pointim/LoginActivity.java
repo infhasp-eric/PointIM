@@ -20,9 +20,12 @@ import com.pointim.view.activity.RegisterActivity;
 import java.util.Observable;
 import java.util.Observer;
 
+import cn.pedant.SweetAlert.SweetAlertDialog;
+
 public class LoginActivity extends AppCompatActivity {
     private EditText username, password;
     private Button btLogin;
+    private SweetAlertDialog loadingDialog;
 
     private Handler toastHandler = new Handler() {
         @Override
@@ -30,6 +33,16 @@ public class LoginActivity extends AppCompatActivity {
             super.handleMessage(message);
             String str = (String) message.obj;
             Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT).show();
+        }
+    };
+
+    private Handler dialogCancel = new Handler() {
+        @Override
+        public void handleMessage(Message message) {
+            super.handleMessage(message);
+            //String str = (String) message.obj;
+            //Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT).show();
+            loadingDialog.cancel();
         }
     };
 
@@ -58,6 +71,8 @@ public class LoginActivity extends AppCompatActivity {
                 startActivityForResult(intent, 1);
             }
         });
+
+        loadingDialog = new SweetAlertDialog(this, SweetAlertDialog.PROGRESS_TYPE).setTitleText("正在登陆");
     }
 
     /**
@@ -71,6 +86,7 @@ public class LoginActivity extends AppCompatActivity {
         LoginParam param = new LoginParam();
         param.setUsername(strusername);
         param.setPassword(strpassword);
+        loadingDialog.show();
 
         //通过自定义控制器向服务器请求
         UserController.userLogin(param, new Observer() {
@@ -83,6 +99,7 @@ public class LoginActivity extends AppCompatActivity {
                 if(result.isFlag()) {
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                     startActivity(intent);
+                    dialogCancel.sendMessage(new Message());
                     finish();
                 } else {
                     Message message = new Message();

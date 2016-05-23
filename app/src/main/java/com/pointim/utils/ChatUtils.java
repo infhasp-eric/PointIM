@@ -14,6 +14,9 @@ import com.pointim.view.activity.MainActivity;
 import com.pointim.view.fragment.ChatFragment;
 import com.pointim.view.fragment.FriendsFragment;
 
+import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.roster.Roster;
+import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smackx.filetransfer.FileTransfer;
 
 import java.io.File;
@@ -29,6 +32,33 @@ import java.util.Observer;
  * for project PointIM
  */
 public class ChatUtils {
+
+    /**
+     * 获取所有好友列表
+     */
+    public static void getAllFriends(final Handler upHandler) {
+        FriendsController.getAllFriends(new Observer() {
+            @Override
+            public void update(Observable observable, Object data) {
+                List<RosterEntry> list = (List<RosterEntry>) data;
+                MainActivity.friendList.clear();
+                AddFriend friend = null;
+                Roster roster = SmackManager.getInstance().getRoster();
+                for (RosterEntry re : list) {
+                    Presence prsn = roster.getPresence(re.getUser());
+                    Log.i("Friend", "Status is " + prsn.getStatus() + prsn.getType());
+                    friend = new AddFriend();
+                    friend.setStatus(prsn.getStatus());
+                    friend.setRemark(re.getName());
+                    friend.setUsername(re.getUser());
+                    MainActivity.friendList.add(friend);
+                    MainActivity.friendMap.put(friend.getUsername(), friend);
+                    //Log.e("Friend", re.getName());
+                }
+                upHandler.sendMessage(new Message());
+            }
+        });
+    }
 
     public static List<ChatParam> getChatParams(String chatJid) {
         List<ChatParam> chatParams = MainActivity.chatRecord.get(chatJid);//从临时记录图里面获取到相应的聊天数据列表
@@ -48,7 +78,7 @@ public class ChatUtils {
         AddFriend friend = null;
         String username = chatJid.replace(("@" + SmackManager.SERVER_NAME), "").replace("/Smack", "");
         Log.e("ChatUtil", "username is " + username);
-        for(AddFriend af : FriendsFragment.friendList) {
+        for(AddFriend af : MainActivity.friendList) {
             Log.e("ChatUtil", "friend username is " + username);
             if(username.equals(af.getUsername())) {
                 friend = af;
@@ -89,7 +119,6 @@ public class ChatUtils {
     /**
      * 检查文件是否接收完成
      * @param transfer
-     * @param file		发送或接收的文件
      * @param type		文件类型，语音或图片
      * @param isSend	是否为自己发送的
      * @param username  发送or接收的好友的username
@@ -97,11 +126,12 @@ public class ChatUtils {
     public static void checkTransferStatus(final FileTransfer transfer, final String file_path, final int type, final boolean isSend, final String username) {
         //final String name = username;
         final ChatParam param = new ChatParam();
+        Log.e("file", "type is" + type);
         param.setMessage_type(type);
         param.setSend(isSend);
         param.setFriendChatJid(username);
         param.setDatetime(new Date());
-        param.setMessage_type(ChatParam.TYPE_SOUND);
+        //param.setMessage_type(ChatParam.TYPE_SOUND);
         param.setFinish(false);
         param.setFile_path(file_path);
 
@@ -218,5 +248,23 @@ public class ChatUtils {
                 }
                 break;
         }
+    }
+
+    /**
+     * 将图片记录添加进聊天历史中
+     * @param filepath
+     */
+    public static void addImageChatParam(String filepath, String sendUser) {
+        ChatParam param = new ChatParam();
+        param.setFile_path(filepath);
+        param.setFriendChatJid(sendUser);
+        param.setMessage_type(ChatParam.TYPE_IMAGE);
+        param.setSend(true);
+        param.setDatetime(new Date());
+        param.setFinish(false);
+        android.os.Message msg = new android.os.Message();
+        msg.obj = param;
+        msg.what = 1;
+        MainActivity.chatHandler.sendMessage(msg);
     }
 }

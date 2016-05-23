@@ -31,6 +31,7 @@ public class UserController {
             public void run() {
                 ResultParam result = new ResultParam();
                 try {
+                    Log.e("Login", "loginparma " + loginParam.getUsername() + loginParam.getPassword());
                     boolean flag = SmackManager.getInstance().login(loginParam.getUsername(), loginParam.getPassword());
                     result.setFlag(flag);
                 } catch (Exception e) {

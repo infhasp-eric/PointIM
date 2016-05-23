@@ -32,6 +32,7 @@ public class FriendsController {
                 if(friends != null) {
                     for (RosterEntry friend : friends) {
                         list.add(friend);
+
                     }
                 }
                 observer.update(null, list);
@@ -70,9 +71,39 @@ public class FriendsController {
             @Override
             public void run() {
                 ResultParam resultParam = new ResultParam();
-                resultParam.setFlag(SmackManager.getInstance().addFriend(af.getUsername(), af.getRemark(), null));
+                resultParam.setFlag(SmackManager.getInstance().addFriend(af.getUsername(), af.getRemark(), "Friend"));
                 Log.e("Friend", "返回结果" + resultParam.isFlag());
                 observer.update(null, resultParam);
+            }
+        }).start();
+    }
+
+    /**
+     * 删除某个好友
+     * @param username
+     * @param observer
+     */
+    public static void deleteFriend(final String username, final Observer observer) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean flag = SmackManager.getInstance().deleteFriend(username);
+                Log.e("Friend", "is success? " + flag);
+                observer.update(null, flag);
+            }
+        }).start();
+    }
+
+    /**
+     * 修改在线状态
+     * @param code
+     */
+    public static void updateUserState(final int code) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean flag = SmackManager.getInstance().updateUserState(code);
+                Log.e("Friend", "修改状态是否成功？" + flag);
             }
         }).start();
     }

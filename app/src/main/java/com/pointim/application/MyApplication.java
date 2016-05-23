@@ -8,6 +8,7 @@ import com.nostra13.universalimageloader.cache.memory.impl.LruMemoryCache;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.assist.QueueProcessingType;
+import com.pointim.controller.FriendsController;
 import com.pointim.controller.UserController;
 import com.pointim.smack.SmackManager;
 import com.pointim.utils.DateUtil;
@@ -50,6 +51,7 @@ public class MyApplication extends Application {
         // 程序终止的时候执行
         Log.d(TAG, "onTerminate");
         ChatActivity.isActive = false;
+        FriendsController.updateUserState(5);//修改状态为离线
         //在程序退出时注销账号
         UserController.userLogout(null);
         super.onTerminate();

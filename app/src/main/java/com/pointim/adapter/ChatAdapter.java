@@ -151,11 +151,11 @@ public class ChatAdapter extends BaseAdapter {
 				}
 			});
 			//showLoading(viewHolder, message);
-		} /*else if(message.getType() == Message.MESSAGE_TYPE_IMAGE) {//图片消息
-			String url = "file://" + message.getFilePath();
+		} else if(message.getMessage_type() == ChatParam.TYPE_IMAGE) {//图片消息
+			String url = "file://" + message.getFile_path();
 			ImageLoader.getInstance().displayImage(url, viewHolder.chatContentImage, options, new SimpleImageLoadingListener());
-			showLoading(viewHolder, message);
-		} */
+			//showLoading(viewHolder, message);
+		}
 		return convertView;
 	}
 	

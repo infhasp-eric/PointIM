@@ -18,6 +18,7 @@ import com.pointim.controller.FriendsController;
 import com.pointim.model.AddFriend;
 import com.pointim.model.ResultParam;
 import com.pointim.ui.ClearEditText;
+import com.pointim.utils.ChatUtils;
 import com.pointim.utils.StringUtils;
 import com.pointim.view.fragment.FriendsFragment;
 
@@ -76,7 +77,7 @@ public class AddFriendActivity extends AppCompatActivity {
 
                         if(rp.isFlag()) {
                             msg.obj = "添加成功";
-                            FriendsFragment.getAllFriends();
+                            ChatUtils.getAllFriends(FriendsFragment.upHandler);
                         } else {
                             msg.obj = "添加失败";
                         }

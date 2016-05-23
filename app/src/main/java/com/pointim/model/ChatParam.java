@@ -10,9 +10,9 @@ import java.util.Date;
  */
 public class ChatParam {
     //消息类型
-    public static int MESSAGE_TYPE_TEXT = 1;       //普通文本信息
-    public static int TYPE_IMAGE = 2;       //图片信息
-    public static int TYPE_SOUND = 3;       //音频信息
+    public static int TYPE_IMAGE = 1;       //图片信息
+    public static int TYPE_SOUND = 2;       //音频信息
+    public static int MESSAGE_TYPE_TEXT = 3;       //普通文本信息
     public static int TYPE_FILE = 4;        //文件信息
     //消息发送结果
     public static int SEND_SUCCESS = 1;     //发送成功

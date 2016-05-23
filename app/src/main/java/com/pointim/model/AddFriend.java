@@ -9,6 +9,16 @@ public class AddFriend implements Serializable {
     private String username;
     private String nickname;
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    private String status;//好友状态
+
     public boolean isHasMessage() {
         return hasMessage;
     }
