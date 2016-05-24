@@ -38,7 +38,9 @@
 
         <EditText
             android:id="@+id/username"
-            android:text="user01"
+            android:text=""
+            android:lines="1"
+            android:singleLine="true"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </LinearLayout>
@@ -54,9 +56,24 @@
 
         <EditText
             android:id="@+id/password"
-            android:text="1111"
+            android:text=""
+            android:lines="1"
+            android:singleLine="true"
+            android:inputType="textPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="right">
+
+        <CheckBox
+            android:id="@+id/ck_rember_pass"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="记住密码"/>
     </LinearLayout>
 
     <LinearLayout

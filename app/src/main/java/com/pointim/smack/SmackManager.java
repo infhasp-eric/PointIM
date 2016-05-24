@@ -63,14 +63,14 @@ public class SmackManager {
      * 
      */
     public static final String XMPP_CLIENT = "Smack";
-
-	public static Roster roster;
     
     private static SmackManager xmppManager;
     /**
      * 连接
      */
     private XMPPTCPConnection connection;
+
+	private Roster roster;
 
     private SmackManager() {
     	this.connection = connect();
@@ -90,6 +90,14 @@ public class SmackManager {
     	}
     	return xmppManager;
     }
+
+	public XMPPTCPConnection getConnection() {
+		return connection;
+	}
+
+	public void cleanConnection() {
+		xmppManager = null;
+	}
     
     /**
      * 连接服务器
@@ -151,7 +159,8 @@ public class SmackManager {
     	}
         try {
         	connection.instantShutdown();
-            return  true;
+            connection = null;
+			return  true;
         } catch (Exception e) {
             e.printStackTrace();
             return  false;
@@ -179,9 +188,8 @@ public class SmackManager {
 	//删除某个好友
 	public boolean deleteFriend(String friendName){
 		boolean b=true;
-		Roster roster = getInstance().getRoster();
 		try {
-			roster.removeEntry(roster.getEntry(friendName));
+			getInstance().getRoster().removeEntry(roster.getEntry(friendName));
 		} catch (Exception e) {
 			b=false;
 		}
@@ -252,45 +260,26 @@ public class SmackManager {
 	    	Presence presence;  
 	        switch (code) {  
 	            case 0://设置在线
-	                presence = new Presence(Presence.Type.available);
-	                presence.setMode(Presence.Mode.available);
-					connection.sendStanza(presence);
+					presence = new Presence(Presence.Type.available);   //这里如果改成unavailable则会显示用户不在线
+					presence.setStatus("在线");
+					connection.sendPacket(presence);
+					//connection.getRoster();
+	                //presence = new Presence(Presence.Type.available);
+	                //presence.setMode(Presence.Mode.available);
+					//connection.sendStanza(presence);
 	                break;  
 	            case 1://设置Q我吧
 	                presence = new Presence(Presence.Type.available);  
 	                presence.setMode(Presence.Mode.chat);  
 	                connection.sendStanza(presence);  
-	                break;  
-	            case 2://设置忙碌
-	                presence = new Presence(Presence.Type.available);  
-	                presence.setMode(Presence.Mode.dnd);  
-	                connection.sendStanza(presence);  
-	                break;  
-	            case 3://设置离开
-	                presence = new Presence(Presence.Type.available);  
-	                presence.setMode(Presence.Mode.away);  
-	                connection.sendStanza(presence);  
-	                break;  
-	            case 4://设置隐身
-	                /*Roster roster = getRoster();
-	                Collection<RosterEntry> entries = roster.getEntries();
-	                for (RosterEntry entry : entries) {
-	                    presence = new Presence(Presence.Type.unavailable);
-	                    presence.setStanzaId(Stanza.ID_NOT_AVAILABLE);
-	                    presence.setFrom(connection.getUser());
-	                    presence.setTo(entry.getUser());
-	                    connection.sendStanza(presence);
-	                }
-	                // 向同一用户的其他客户端发送隐身状态
-	                presence = new Presence(Presence.Type.unavailable);
-	                presence.setStanzaId(Packet.ID_NOT_AVAILABLE);
-	                presence.setFrom(connection.getUser());
-	                presence.setTo(StringUtils.parseBareAddress(connection.getUser()));
-	                connection.sendStanza(presence);*/
-	                break;  
+	                break;
 	            case 5://设置离线
+					//Presence presence1 = new Presence(Presence.Type.available);   //这里如果改成unavailable则会显示用户不在线
+					//presence1.setStatus("在线");
+					//connection.sendPacket(presence1);
+
 	                presence = new Presence(Presence.Type.unavailable);  
-	                connection.sendStanza(presence);  
+	                connection.sendPacket(presence);
 	                break;
 	            default:  
 	                break;  
@@ -377,22 +366,37 @@ public class SmackManager {
     }
 
 	public Roster getRoster() {
-		if (isConnected() && roster != null) {
-			return roster;
-		} else if(isConnected() && roster == null) {
+		if(roster == null) {
 			roster = Roster.getInstanceFor(connection);
-			return roster;
 		}
-		throw new NullPointerException("服务器连接失败，请先连接服务器");
+		return roster;
 	}
     
     /**
      * 获取当前登录用户的所有好友信息
      * @return
      */
-    public Set<RosterEntry> getAllFriends() {
+    public List<AddFriend> getAllFriends() {
     	if(isConnected()) {
-    		return Roster.getInstanceFor(connection).getEntries();
+			List<AddFriend> afList = new ArrayList<AddFriend>();
+			Roster roster = SmackManager.getInstance().getRoster();
+			Collection<RosterEntry> rg = roster.getEntries();
+			AddFriend af = null;
+			for (RosterEntry re : rg) {
+				af = new AddFriend();
+				//当状态不为chatjid时
+				if(!re.getUser().endsWith("@point-im-server")) {
+					af.setUsername(re.getUser());
+					af.setNickname(re.getName());
+					af.setChatjid(re.getUser() + "@point-im-server");
+					Presence presence = roster.getPresence(af.getChatjid());
+					System.out.println("Status is :" + re.getUser() + ": " + presence.getStatus() + "|" + presence.getType().name());
+					af.setStatus(presence.getStatus()==null?"离线":presence.getStatus());
+					afList.add(af);
+				}
+			}
+
+    		return afList;
     	}
     	throw new NullPointerException("服务器连接失败，请先连接服务器");
     }
@@ -419,7 +423,14 @@ public class SmackManager {
     public boolean addFriend(String user, String nickName, String groupName) {
     	if(isConnected()) {
     		try {
+				//  将好友添加进好友列表
 				Roster.getInstanceFor(connection).createEntry(user, nickName, new String[]{groupName});
+				//关注好友的状态
+				Presence presence = new Presence(Presence.Type.subscribe);
+				presence.setTo(user+ "@point-im-server");
+				//presence.setMode(Presence.Mode.available);
+				SmackManager.getInstance().getConnection().sendPacket(presence);
+
 				return true;
 			} catch (NotLoggedInException | NoResponseException
 					| XMPPErrorException | NotConnectedException e) {

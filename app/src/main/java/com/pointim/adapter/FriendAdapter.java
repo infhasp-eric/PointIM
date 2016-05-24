@@ -48,6 +48,7 @@ public class FriendAdapter extends BaseAdapter {
         TextView nickName;
         TextView username;
         TextView hasMessage;
+        TextView status;
 
         convertView = mInflater.inflate(R.layout.item_friend, null);
         // construct an item tag
@@ -55,16 +56,23 @@ public class FriendAdapter extends BaseAdapter {
         convertView.setTag(viewTag);
         try {
             nickName = (TextView) convertView.findViewById(R.id.nickname);
-            if (StringUtils.isBlank(viewTag.getRemark()))
+            if (!StringUtils.isBlank(viewTag.getNickname()))
                 nickName.setText(viewTag.getNickname());
             else
-                nickName.setText(viewTag.getRemark());
+                nickName.setText(viewTag.getUsername());
             username = (TextView) convertView.findViewById(R.id.username);
             username.setText(viewTag.getUsername());
-            hasMessage = (TextView) convertView.findViewById(R.id.has_message);
-            //设置影藏显示
-            if (viewTag.isHasMessage()) hasMessage.setVisibility(View.VISIBLE);
-            else hasMessage.setVisibility(View.GONE);
+            status = (TextView) convertView.findViewById(R.id.status);
+            status.setText("(" + viewTag.getStatus() + ")");
+            if(viewTag.getStatus().equals("在线")) {
+                nickName.setTextColor(mContext.getResources().getColor(R.color.online));
+                status.setTextColor(mContext.getResources().getColor(R.color.online));
+            } else {
+                nickName.setTextColor(mContext.getResources().getColor(R.color.offline));
+                status.setTextColor(mContext.getResources().getColor(R.color.offline));
+            }
+            //hasMessage = (TextView) convertView.findViewById(R.id.has_message);
+
         } catch (Exception e) {
             e.printStackTrace();
         }

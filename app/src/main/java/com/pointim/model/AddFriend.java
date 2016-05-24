@@ -8,6 +8,20 @@ import java.io.Serializable;
 public class AddFriend implements Serializable {
     private String username;
     private String nickname;
+    private String chatjid;
+    private String status;//好友状态
+    private String groupname;
+    private String remark;
+    private boolean hasMessage = false;
+
+    public String getChatjid() {
+        return chatjid;
+    }
+
+    public void setChatjid(String chatjid) {
+        this.chatjid = chatjid;
+    }
+
 
     public String getStatus() {
         return status;
@@ -17,7 +31,6 @@ public class AddFriend implements Serializable {
         this.status = status;
     }
 
-    private String status;//好友状态
 
     public boolean isHasMessage() {
         return hasMessage;
@@ -27,7 +40,6 @@ public class AddFriend implements Serializable {
         this.hasMessage = hasMessage;
     }
 
-    private boolean hasMessage = false;
 
     public String getRemark() {
         return remark;
@@ -37,7 +49,6 @@ public class AddFriend implements Serializable {
         this.remark = remark;
     }
 
-    private String remark;
 
     public String getGroupname() {
         return groupname;
@@ -63,5 +74,4 @@ public class AddFriend implements Serializable {
         this.username = username;
     }
 
-    private String groupname;
 }

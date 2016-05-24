@@ -26,16 +26,9 @@ public class FriendsController {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Set<RosterEntry> friends = SmackManager.getInstance().getAllFriends();
+                List<AddFriend> friends = SmackManager.getInstance().getAllFriends();
                 Log.e("List", "Friends size is " + friends.size());
-                List<RosterEntry> list = new ArrayList<>();
-                if(friends != null) {
-                    for (RosterEntry friend : friends) {
-                        list.add(friend);
-
-                    }
-                }
-                observer.update(null, list);
+                observer.update(null, friends);
             }
         }).start();
     }

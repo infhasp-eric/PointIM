@@ -14,6 +14,7 @@ import com.pointim.LoginActivity;
 import com.pointim.R;
 import com.pointim.controller.FriendsController;
 import com.pointim.controller.UserController;
+import com.pointim.smack.SmackManager;
 import com.pointim.view.activity.MainActivity;
 
 import java.util.Observable;

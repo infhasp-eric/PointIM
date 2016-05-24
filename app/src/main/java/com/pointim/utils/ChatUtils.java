@@ -7,6 +7,7 @@ import android.util.Log;
 import com.pointim.controller.FriendsController;
 import com.pointim.model.AddFriend;
 import com.pointim.model.ChatParam;
+import com.pointim.model.MessageModel;
 import com.pointim.smack.SmackManager;
 import com.pointim.task.AddChatParamTask;
 import com.pointim.view.activity.ChatActivity;
@@ -14,6 +15,7 @@ import com.pointim.view.activity.MainActivity;
 import com.pointim.view.fragment.ChatFragment;
 import com.pointim.view.fragment.FriendsFragment;
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
@@ -21,6 +23,7 @@ import org.jivesoftware.smackx.filetransfer.FileTransfer;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Observable;
@@ -40,19 +43,15 @@ public class ChatUtils {
         FriendsController.getAllFriends(new Observer() {
             @Override
             public void update(Observable observable, Object data) {
-                List<RosterEntry> list = (List<RosterEntry>) data;
+                List<AddFriend> list = (List<AddFriend>) data;
                 MainActivity.friendList.clear();
-                AddFriend friend = null;
-                Roster roster = SmackManager.getInstance().getRoster();
-                for (RosterEntry re : list) {
-                    Presence prsn = roster.getPresence(re.getUser());
-                    Log.i("Friend", "Status is " + prsn.getStatus() + prsn.getType());
-                    friend = new AddFriend();
-                    friend.setStatus(prsn.getStatus());
-                    friend.setRemark(re.getName());
-                    friend.setUsername(re.getUser());
-                    MainActivity.friendList.add(friend);
-                    MainActivity.friendMap.put(friend.getUsername(), friend);
+
+                for (AddFriend re : list) {
+                    //如果在线则放在第一位
+                    if(re.getStatus() != null && re.getStatus().equals("在线")) MainActivity.friendList.add(0, re);
+                    //不在线则放在末尾
+                    else MainActivity.friendList.add(re);
+                    MainActivity.friendMap.put(re.getUsername(), re);
                     //Log.e("Friend", re.getName());
                 }
                 upHandler.sendMessage(new Message());
@@ -96,8 +95,12 @@ public class ChatUtils {
     public static void addNewHistoryChat(String chatJid) {
         final AddFriend friend = getLocalFriendByChatJid(chatJid);
         Log.e("ChatUtil", "有无好友" + (friend == null));
+
+        final MessageModel mmd = new MessageModel();
+        mmd.setType(MessageModel.TYPE_CHAT);
         if(friend != null) {
-            ChatFragment.adapter.addItem(friend);
+            mmd.setAddFriend(friend);
+            ChatFragment.adapter.addItem(mmd);
         } else {
             String username = chatJid.replace(("@" + SmackManager.SERVER_NAME), "").replace("/Smack", "");
             FriendsController.getFriednByUserName(username, new Observer() {
@@ -108,8 +111,10 @@ public class ChatUtils {
                         List<AddFriend> result = (List<AddFriend>) data;
                         if (result.size() > 0)
                             af = result.get(0);
-                        if(af != null)
-                            ChatFragment.adapter.addItem(af);
+                        if(af != null) {
+                            mmd.setAddFriend(af);
+                            ChatFragment.adapter.addItem(mmd);
+                        }
                     }
                 }
             });

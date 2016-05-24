@@ -1,6 +1,8 @@
 package com.pointim.view.activity;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -26,21 +28,20 @@ public class RegisterActivity extends AppCompatActivity {
     private Button btRegister;
     private ImageView btBack;
 
+    private Handler tostHand = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            String tStr = (String) msg.obj;
+            if(!StringUtils.isBlank(tStr)) {
+                toast(tStr);
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
-        //Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        //setSupportActionBar(toolbar);
-
-        /*FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });*/
         initView();
     }
 
@@ -100,17 +101,18 @@ public class RegisterActivity extends AppCompatActivity {
         rParam.setUsername(username);
         rParam.setPassword(password);
         rParam.setNickname(nickname);
-        Log.e("Regist", "111111111111111111111111111");
         UserController.userRegister(rParam, new Observer() {
             @Override
             public void update(Observable observable, Object data) {
                 ResultParam param = (ResultParam) data;
+                Message msg = new Message();
                 if (param.isFlag()) {
-                    toast("注册成功");
+                    msg.obj = "注册成功";
                     finish();
                 } else {
-                    toast("注册失败");
+                    msg.obj = "注册失败";
                 }
+                tostHand.sendMessage(msg);
             }
         });
 

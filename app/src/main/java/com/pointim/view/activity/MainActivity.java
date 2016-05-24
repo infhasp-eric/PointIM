@@ -1,5 +1,6 @@
 package com.pointim.view.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -17,6 +18,7 @@ import com.pointim.controller.FriendsController;
 import com.pointim.controller.UserController;
 import com.pointim.model.AddFriend;
 import com.pointim.model.ChatParam;
+import com.pointim.model.MessageModel;
 import com.pointim.smack.SmackManager;
 import com.pointim.task.AddChatParamTask;
 import com.pointim.utils.ChatUtils;
@@ -28,11 +30,18 @@ import com.pointim.view.fragment.CenterFragment;
 import com.pointim.view.fragment.ChatFragment;
 import com.pointim.view.fragment.FriendsFragment;
 
+import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManagerListener;
 import org.jivesoftware.smack.chat.ChatMessageListener;
+import org.jivesoftware.smack.filter.AndFilter;
+import org.jivesoftware.smack.filter.PacketFilter;
+import org.jivesoftware.smack.filter.PacketTypeFilter;
+import org.jivesoftware.smack.filter.StanzaFilter;
+import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.roster.RosterListener;
 import org.jivesoftware.smackx.filetransfer.FileTransfer;
 import org.jivesoftware.smackx.filetransfer.FileTransferListener;
@@ -45,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
@@ -92,6 +102,8 @@ public class MainActivity extends FragmentActivity {
             ChatUtils.notify(message.what, param);
         }
     };
+
+    private String name,password,response,acceptAdd,alertName,alertSubName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -295,6 +307,43 @@ public class MainActivity extends FragmentActivity {
         SmackManager.getInstance().getRoster().addRosterListener(new RosterListener(){
             @Override
             public void entriesAdded(Collection<String> addresses) {
+                String user = "";
+                Iterator<String> it = addresses.iterator();
+                while(it.hasNext()){
+                    user=it.next();
+                    Log.e("Friend", "好友请求？？？？？？" + user);
+                    final MessageModel mmd = new MessageModel();
+                    mmd.setType(MessageModel.TYPE_REQUEST);
+                    String username = user.replace("@point-im-server", "");
+                    FriendsController.getFriednByUserName(username, new Observer() {
+                        @Override
+                        public void update(Observable observable, Object data) {
+                            if(data != null && (List<AddFriend>) data != null) {
+                                AddFriend af = null;
+                                List<AddFriend> result = (List<AddFriend>) data;
+                                if (result.size() > 0)
+                                    af = result.get(0);
+                                Log.e("好友请求", "好友用户名" + (af == null));
+                                if(af != null) {
+                                    Log.e("好友请求", "好友用户名" + af.getUsername());
+                                    mmd.setAddFriend(af);
+                                    ChatFragment.adapter.addItem(mmd);
+                                }
+                            }
+                        }
+                    });
+
+                    //这里应该提示,然后是否确认添加对方为好友
+                    //订阅好友的Presence
+/*                        Presence presence = new Presence(Presence.Type.subscribe);
+                        presence.setTo();
+                        //presence.setMode(Presence.Mode.available);
+                        try {
+                            SmackManager.getInstance().getConnection().sendPacket(presence);
+                        } catch (SmackException.NotConnectedException e) {
+                            e.printStackTrace();
+                        }*/
+                    }
 
             }
 
@@ -311,8 +360,79 @@ public class MainActivity extends FragmentActivity {
             @Override
             public void presenceChanged(Presence prsnc) {
                 System.out.println("Change: "+ prsnc.getFrom()+" status :"+prsnc.getStatus());
+                AddFriend af = friendMap.get(prsnc.getFrom().replace("@point-im-server", "").replace("/Smack", "").replace("/Spack", ""));
+                if(af != null && !(af.getStatus().equals("离线") && prsnc.getStatus() == null) && !af.getStatus().equals(prsnc.getStatus())) {
+                    af.setStatus(prsnc.getStatus()==null?"离线":prsnc.getStatus());
+                    if (af.getStatus().equals("在线")) {
+                        friendList.remove(af);
+                        friendList.add(0, af);
+                    } else {
+                        friendList.remove(af);
+                        friendList.add(af);
+                    }
+                    if (FriendsFragment.isEx) {
+                        FriendsFragment.upHandler.sendMessage(new Message());
+                    }
+                }
+
             }
         });
+
+        //条件过滤器
+        /*StanzaFilter myFilter = new StanzaFilter() {
+            public boolean accept(Stanza stanza) {
+                return true;
+                //return "RS145".equals(stanza.getStanzaId());
+            }
+        };
+        //packet监听器
+        PacketListener listener = new PacketListener() {
+
+            @Override
+            public void processPacket(Stanza stanza) throws SmackException.NotConnectedException {
+                System.out.println("PresenceService-"+stanza.toXML());
+                if(stanza instanceof Presence){
+                    Presence presence = (Presence)stanza;
+                    String from = presence.getFrom();//发送方
+                    String to = presence.getTo();//接收方
+                    if (presence.getType().equals(Presence.Type.subscribe)) {
+                        System.out.println("收到添加请求！");
+                        //发送广播传递发送方的JIDfrom及字符串
+                        acceptAdd = "收到添加请求！";
+                        Intent intent = new Intent();
+                        intent.putExtra("fromName", from);
+                        intent.putExtra("acceptAdd", acceptAdd);
+                        intent.setAction("com.example.eric_jqm_chat.AddFriendActivity");
+                        sendBroadcast(intent);
+                    } else if (presence.getType().equals(
+                            Presence.Type.subscribed)) {
+                        //发送广播传递response字符串
+                        response = "恭喜，对方同意添加好友！";
+                        Intent intent = new Intent();
+                        intent.putExtra("response", response);
+                        intent.setAction("com.example.eric_jqm_chat.AddFriendActivity");
+                        sendBroadcast(intent);
+                    } else if (presence.getType().equals(
+                            Presence.Type.unsubscribe)) {
+                        //发送广播传递response字符串
+                        response = "抱歉，对方拒绝添加好友，将你从好友列表移除！";
+                        Intent intent = new Intent();
+                        intent.putExtra("response", response);
+                        intent.setAction("com.example.eric_jqm_chat.AddFriendActivity");
+                        sendBroadcast(intent);
+                    } else if (presence.getType().equals(
+                            Presence.Type.unsubscribed)){
+                    } else if (presence.getType().equals(
+                            Presence.Type.unavailable)) {
+                        System.out.println("好友下线！");
+                    } else {
+                        System.out.println("好友上线！");
+                    }
+                }
+            }
+        };
+        //添加监听
+        SmackManager.getInstance().getConnection().addPacketListener(listener, myFilter);*/
 
     }
 

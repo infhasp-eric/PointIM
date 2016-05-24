@@ -58,6 +58,7 @@ public class UserController {
             public void run() {
                 boolean flag = SmackManager.getInstance().logout();
                 SmackManager.getInstance().disconnect();
+                SmackManager.getInstance().cleanConnection();
                 if(observer != null)
                     observer.update(null, flag);
             }
@@ -73,12 +74,9 @@ public class UserController {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Log.e("Regist", "2222222222222222222222222222222");
                 Map<String, String> attributes = new HashMap<>();
-                attributes.put("Name", param.getNickname());
-                Log.e("Regist", "username:" + param.getUsername() + "|password:" + param.getPassword());
+                attributes.put("name", param.getNickname());
                 final boolean flag = SmackManager.getInstance().registerUser(param.getUsername(), param.getPassword(), attributes);
-                Log.e("Regist", "2222222222222222222222222222222" + flag);
                 ResultParam param = new ResultParam();
                 param.setFlag(flag);
                 observer.update(null, param);

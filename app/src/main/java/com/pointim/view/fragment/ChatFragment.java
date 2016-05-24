@@ -14,6 +14,8 @@ import com.handmark.pulltorefresh.library.PullToRefreshListView;
 import com.pointim.R;
 import com.pointim.adapter.ChatHistoryAdapter;
 import com.pointim.model.AddFriend;
+import com.pointim.model.MessageModel;
+import com.pointim.view.activity.AddFriendActivity;
 import com.pointim.view.activity.ChatActivity;
 
 import java.util.ArrayList;
@@ -27,7 +29,7 @@ public class ChatFragment extends Fragment {
     public static ChatHistoryAdapter adapter;
 
     //保存历史聊天用户
-    public static List<AddFriend> historyList;
+    public static List<MessageModel> historyList;
 
     //用于刷新列表
     public static Handler update = new Handler() {
@@ -49,7 +51,7 @@ public class ChatFragment extends Fragment {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        historyList = new ArrayList<AddFriend>();
+        historyList = new ArrayList<MessageModel>();
         initView(view);
     }
 
@@ -61,13 +63,20 @@ public class ChatFragment extends Fragment {
         chatList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                AddFriend friend = (AddFriend) view.getTag();
-                friend.setHasMessage(false);
-                Intent intent = new Intent(getActivity(), ChatActivity.class);
-                intent.putExtra("user", friend.getUsername());
-                intent.putExtra("nickname", friend.getNickname());
-                friend.setHasMessage(false);
-                startActivity(intent);
+                MessageModel message = (MessageModel) view.getTag();
+                if(message.getType() == MessageModel.TYPE_CHAT) {//为聊天类型的消息
+                    message.getAddFriend().setHasMessage(false);
+                    Intent intent = new Intent(getActivity(), ChatActivity.class);
+                    intent.putExtra("user", message.getAddFriend().getUsername());
+                    intent.putExtra("nickname", message.getAddFriend().getNickname());
+                    message.getAddFriend().setHasMessage(false);
+                    startActivity(intent);
+                } else {//为好友请求类型的消息
+                    AddFriend af = message.getAddFriend();
+                    Intent intent = new Intent(getActivity(), AddFriendActivity.class);
+                    intent.putExtra("af", af);
+                    startActivity(intent);
+                }
                 update.sendMessage(new Message());
             }
         });

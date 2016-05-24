@@ -131,11 +131,11 @@ public class ChatAdapter extends BaseAdapter {
 			if ((message.getDatetime().getTime() - lastChatParam.getDatetime().getTime()) < (1000*60*5)) {
 				viewHolder.chatContentTime.setVisibility(View.GONE);
 			} else {
-				viewHolder.chatContentTime.setText(DateUtil.formatDate(message.getDatetime()));
+				viewHolder.chatContentTime.setText(DateUtil.formatDatetime(message.getDatetime()));
 				viewHolder.chatContentTime.setVisibility(View.VISIBLE);
 			}
 		} else {
-			viewHolder.chatContentTime.setText(DateUtil.formatDate(message.getDatetime()));
+			viewHolder.chatContentTime.setText(DateUtil.formatDatetime(message.getDatetime()));
 			viewHolder.chatContentTime.setVisibility(View.VISIBLE);
 		}
 		setMessageViewVisible(message.getMessage_type(), viewHolder);

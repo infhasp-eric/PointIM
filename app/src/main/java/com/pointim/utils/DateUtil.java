@@ -52,9 +52,9 @@ public class DateUtil {
      */  
     public static String formatDatetime(Date date, String pattern) {
         SimpleDateFormat customFormat = (SimpleDateFormat) datetimeFormat
-                .clone();  
-        customFormat.applyPattern(pattern);  
-        return customFormat.format(date);  
+                .clone();
+        customFormat.applyPattern(pattern);
+        return customFormat.format(date);
     }  
   
     /** 
@@ -76,7 +76,7 @@ public class DateUtil {
      * @return 
      */  
     public static String formatDate(Date date) {
-        return dateFormat.format(date);  
+        return dateFormat.format(date);
     }  
   
     /** 
