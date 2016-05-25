@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import com.pointim.R;
 import com.pointim.adapter.FriendAdapter;
+import com.pointim.adapter.SearchAdapter;
 import com.pointim.controller.FriendsController;
 import com.pointim.model.AddFriend;
 import com.pointim.ui.ClearEditText;
@@ -30,7 +31,7 @@ public class SearchFriendActivity extends AppCompatActivity {
     private ListView userList;
 
     private List<AddFriend> friendList = new ArrayList<AddFriend>();
-    private FriendAdapter adapter;
+    private SearchAdapter adapter;
 
     public Handler upHandler = new Handler() {
         @Override
@@ -54,7 +55,7 @@ public class SearchFriendActivity extends AppCompatActivity {
         btQuery = (ImageView) findViewById(R.id.bt_query);
         etUsername = (ClearEditText) findViewById(R.id.et_username);
         userList = (ListView) findViewById(R.id.user_list);
-        adapter = new FriendAdapter(SearchFriendActivity.this, friendList);
+        adapter = new SearchAdapter(SearchFriendActivity.this, friendList);
         userList.setAdapter(adapter);
 
         userList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -79,6 +80,9 @@ public class SearchFriendActivity extends AppCompatActivity {
                             if (data != null && (List<AddFriend>)data != null) {
                                 List<AddFriend> result = (List<AddFriend>) data;
                                 for (AddFriend af : result) {
+                                    if(af.getUsername().equals(MainActivity.mineUsername)) {
+                                        continue;
+                                    }
                                     friendList.add(af);
                                 }
                                 upHandler.sendMessage(new Message());

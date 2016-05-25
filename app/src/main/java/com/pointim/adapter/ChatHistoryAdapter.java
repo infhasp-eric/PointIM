@@ -54,31 +54,27 @@ public class ChatHistoryAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         MessageModel viewTag = mList.get(position);
-        TextView nickName;
         TextView username;
+        TextView messageContent;
         TextView hasMessage;
-        convertView = mInflater.inflate(R.layout.item_friend, null);
-        nickName = (TextView) convertView.findViewById(R.id.nickname);
+        convertView = mInflater.inflate(R.layout.item_chat_history, null);
+        messageContent = (TextView) convertView.findViewById(R.id.message_content);
+        username = (TextView) convertView.findViewById(R.id.username);
+        hasMessage = (TextView) convertView.findViewById(R.id.has_message);
+        if (StringUtils.isBlank(viewTag.getAddFriend().getRemark()))
+            username.setText(viewTag.getAddFriend().getNickname());
+        else
+            username.setText(viewTag.getAddFriend().getRemark());
+        convertView.setTag(viewTag);
         if(viewTag.getType() == MessageModel.TYPE_CHAT) {
-            // construct an item tag
-            convertView.setTag(viewTag);
-            try {
-                if (StringUtils.isBlank(viewTag.getAddFriend().getRemark()))
-                    nickName.setText(viewTag.getAddFriend().getNickname());
-                else
-                    nickName.setText(viewTag.getAddFriend().getRemark());
-                username = (TextView) convertView.findViewById(R.id.username);
-                username.setText(viewTag.getAddFriend().getUsername());
-                hasMessage = (TextView) convertView.findViewById(R.id.has_message);
-                //设置影藏显示
-                if (viewTag.getAddFriend().isHasMessage()) hasMessage.setVisibility(View.VISIBLE);
-                else hasMessage.setVisibility(View.GONE);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            messageContent.setText("");
         } else {
-            nickName.setText("新的好友请求");
-            convertView.setTag(viewTag);
+            messageContent.setText("新的好友请求");
+        }
+        if(viewTag.getAddFriend().isHasMessage()) {
+            hasMessage.setVisibility(View.VISIBLE);
+        } else {
+            hasMessage.setVisibility(View.GONE);
         }
         return convertView;
     }
@@ -90,7 +86,7 @@ public class ChatHistoryAdapter extends BaseAdapter {
     public void addItem(MessageModel message) {
         message.getAddFriend().setHasMessage(true);
         try {
-            if (ChatActivity.isActive) {
+            if (ChatActivity.chatJid != null) {
                 //当前聊天的对象和接收到数据的对象一致
                 if (ChatActivity.chatJid.startsWith(message.getAddFriend().getUsername())) {
                     message.getAddFriend().setHasMessage(false);

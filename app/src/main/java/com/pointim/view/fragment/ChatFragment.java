@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -72,6 +73,9 @@ public class ChatFragment extends Fragment {
                     message.getAddFriend().setHasMessage(false);
                     startActivity(intent);
                 } else {//为好友请求类型的消息
+                    Log.e("好友操作", "historyList size " + historyList.size());
+                    historyList.remove(message);
+                    Log.e("好友操作", "historyList size " + historyList.size());
                     AddFriend af = message.getAddFriend();
                     Intent intent = new Intent(getActivity(), AddFriendActivity.class);
                     intent.putExtra("af", af);

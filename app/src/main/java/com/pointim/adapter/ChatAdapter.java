@@ -1,6 +1,7 @@
 package com.pointim.adapter;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
@@ -17,6 +18,7 @@ import com.pointim.R;
 import com.pointim.model.ChatParam;
 import com.pointim.model.Message;
 import com.pointim.utils.DateUtil;
+import com.pointim.view.activity.ShowImageActivity;
 
 import java.io.IOException;
 import java.util.List;
@@ -154,6 +156,14 @@ public class ChatAdapter extends BaseAdapter {
 		} else if(message.getMessage_type() == ChatParam.TYPE_IMAGE) {//图片消息
 			String url = "file://" + message.getFile_path();
 			ImageLoader.getInstance().displayImage(url, viewHolder.chatContentImage, options, new SimpleImageLoadingListener());
+			viewHolder.chatContentImage.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					Intent intent = new Intent(context, ShowImageActivity.class);
+					intent.putExtra("image_path", message.getFile_path());
+					context.startActivity(intent);
+				}
+			});
 			//showLoading(viewHolder, message);
 		}
 		return convertView;

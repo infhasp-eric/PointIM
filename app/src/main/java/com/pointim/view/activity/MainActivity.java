@@ -1,6 +1,8 @@
 package com.pointim.view.activity;
 
+import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -42,6 +44,7 @@ import org.jivesoftware.smack.filter.StanzaFilter;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.roster.RosterListener;
 import org.jivesoftware.smackx.filetransfer.FileTransfer;
 import org.jivesoftware.smackx.filetransfer.FileTransferListener;
@@ -80,6 +83,7 @@ public class MainActivity extends FragmentActivity {
 
     private String fileDir;
 
+    public static String mineUsername;
     //好友列表
     public static List<AddFriend> friendList = new ArrayList<AddFriend>();
     //好友信息
@@ -110,6 +114,10 @@ public class MainActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         FriendsController.updateUserState(0);//修改状态为在线
+
+
+        SharedPreferences read = getSharedPreferences(getString(R.string.app_shared_preferences), Activity.MODE_WORLD_READABLE);
+        mineUsername = read.getString("u_username", "");
 
         //getWindow().setFormat(PixelFormat.TRANSLUCENT);
         //获取FragmentManager实例
@@ -295,7 +303,7 @@ public class MainActivity extends FragmentActivity {
                 IncomingFileTransfer transfer = request.accept();
                 try {
                     String type = request.getDescription();
-                    File file = new File(fileDir ,request.getFileName());
+                    File file = new File(fileDir, request.getFileName());
                     transfer.recieveFile(file);
                     ChatUtils.checkTransferStatus(transfer, file.getPath(), Integer.parseInt(type), false, request.getRequestor());
                 } catch (SmackException | IOException e) {
@@ -304,46 +312,48 @@ public class MainActivity extends FragmentActivity {
             }
         });
         //好友状态监听器
-        SmackManager.getInstance().getRoster().addRosterListener(new RosterListener(){
+        SmackManager.getInstance().getRoster().addRosterListener(new RosterListener() {
             @Override
             public void entriesAdded(Collection<String> addresses) {
                 String user = "";
                 Iterator<String> it = addresses.iterator();
-                while(it.hasNext()){
-                    user=it.next();
+                while (it.hasNext()) {
+                    user = it.next();
+                    Log.e("好友操作", "这时收到好友请求" + user + "|" + new Date());
+                    final String username = user.replace("@point-im-server", "");
+                    Log.e("好友操作", "这时收到好友请求" + username + (friendMap.get(username)==null));
                     Log.e("Friend", "好友请求？？？？？？" + user);
-                    final MessageModel mmd = new MessageModel();
-                    mmd.setType(MessageModel.TYPE_REQUEST);
-                    String username = user.replace("@point-im-server", "");
-                    FriendsController.getFriednByUserName(username, new Observer() {
+                    new Thread(new Runnable() {
                         @Override
-                        public void update(Observable observable, Object data) {
-                            if(data != null && (List<AddFriend>) data != null) {
-                                AddFriend af = null;
-                                List<AddFriend> result = (List<AddFriend>) data;
-                                if (result.size() > 0)
-                                    af = result.get(0);
-                                Log.e("好友请求", "好友用户名" + (af == null));
-                                if(af != null) {
-                                    Log.e("好友请求", "好友用户名" + af.getUsername());
-                                    mmd.setAddFriend(af);
-                                    ChatFragment.adapter.addItem(mmd);
-                                }
+                        public void run() {
+                            RosterEntry friend = SmackManager.getInstance().getFriend(username);
+                            if(friend == null || StringUtils.isBlank(friend.getUser())) {
+                                final MessageModel mmd = new MessageModel();
+                                mmd.setType(MessageModel.TYPE_REQUEST);
+                                FriendsController.getFriednByUserName(username, new Observer() {
+                                    @Override
+                                    public void update(Observable observable, Object data) {
+                                        if (data != null && (List<AddFriend>) data != null) {
+                                            AddFriend af = null;
+                                            List<AddFriend> result = (List<AddFriend>) data;
+                                            if (result.size() > 0)
+                                                af = result.get(0);
+                                            Log.e("好友请求", "好友用户名" + (af == null));
+                                            if (af != null) {
+                                                af.setHasMessage(true);
+                                                Log.e("好友请求", "好友用户名" + af.getUsername());
+                                                mmd.setAddFriend(af);
+                                                ChatFragment.adapter.addItem(mmd);
+                                            }
+                                        }
+                                    }
+                                });
                             }
                         }
-                    });
+                    }).start();
 
-                    //这里应该提示,然后是否确认添加对方为好友
-                    //订阅好友的Presence
-/*                        Presence presence = new Presence(Presence.Type.subscribe);
-                        presence.setTo();
-                        //presence.setMode(Presence.Mode.available);
-                        try {
-                            SmackManager.getInstance().getConnection().sendPacket(presence);
-                        } catch (SmackException.NotConnectedException e) {
-                            e.printStackTrace();
-                        }*/
-                    }
+
+                }
 
             }
 
@@ -359,10 +369,13 @@ public class MainActivity extends FragmentActivity {
 
             @Override
             public void presenceChanged(Presence prsnc) {
-                System.out.println("Change: "+ prsnc.getFrom()+" status :"+prsnc.getStatus());
+                System.out.println("Change: " + prsnc.getFrom() + " status :" + prsnc.getStatus());
+                if(prsnc.getFrom().indexOf("@point-im-server") < 0) {
+                    return;
+                }
                 AddFriend af = friendMap.get(prsnc.getFrom().replace("@point-im-server", "").replace("/Smack", "").replace("/Spack", ""));
-                if(af != null && !(af.getStatus().equals("离线") && prsnc.getStatus() == null) && !af.getStatus().equals(prsnc.getStatus())) {
-                    af.setStatus(prsnc.getStatus()==null?"离线":prsnc.getStatus());
+                if (af != null && !(af.getStatus().equals("离线") && prsnc.getStatus() == null) && !af.getStatus().equals(prsnc.getStatus())) {
+                    af.setStatus(prsnc.getStatus() == null ? "离线" : prsnc.getStatus());
                     if (af.getStatus().equals("在线")) {
                         friendList.remove(af);
                         friendList.add(0, af);
@@ -377,63 +390,6 @@ public class MainActivity extends FragmentActivity {
 
             }
         });
-
-        //条件过滤器
-        /*StanzaFilter myFilter = new StanzaFilter() {
-            public boolean accept(Stanza stanza) {
-                return true;
-                //return "RS145".equals(stanza.getStanzaId());
-            }
-        };
-        //packet监听器
-        PacketListener listener = new PacketListener() {
-
-            @Override
-            public void processPacket(Stanza stanza) throws SmackException.NotConnectedException {
-                System.out.println("PresenceService-"+stanza.toXML());
-                if(stanza instanceof Presence){
-                    Presence presence = (Presence)stanza;
-                    String from = presence.getFrom();//发送方
-                    String to = presence.getTo();//接收方
-                    if (presence.getType().equals(Presence.Type.subscribe)) {
-                        System.out.println("收到添加请求！");
-                        //发送广播传递发送方的JIDfrom及字符串
-                        acceptAdd = "收到添加请求！";
-                        Intent intent = new Intent();
-                        intent.putExtra("fromName", from);
-                        intent.putExtra("acceptAdd", acceptAdd);
-                        intent.setAction("com.example.eric_jqm_chat.AddFriendActivity");
-                        sendBroadcast(intent);
-                    } else if (presence.getType().equals(
-                            Presence.Type.subscribed)) {
-                        //发送广播传递response字符串
-                        response = "恭喜，对方同意添加好友！";
-                        Intent intent = new Intent();
-                        intent.putExtra("response", response);
-                        intent.setAction("com.example.eric_jqm_chat.AddFriendActivity");
-                        sendBroadcast(intent);
-                    } else if (presence.getType().equals(
-                            Presence.Type.unsubscribe)) {
-                        //发送广播传递response字符串
-                        response = "抱歉，对方拒绝添加好友，将你从好友列表移除！";
-                        Intent intent = new Intent();
-                        intent.putExtra("response", response);
-                        intent.setAction("com.example.eric_jqm_chat.AddFriendActivity");
-                        sendBroadcast(intent);
-                    } else if (presence.getType().equals(
-                            Presence.Type.unsubscribed)){
-                    } else if (presence.getType().equals(
-                            Presence.Type.unavailable)) {
-                        System.out.println("好友下线！");
-                    } else {
-                        System.out.println("好友上线！");
-                    }
-                }
-            }
-        };
-        //添加监听
-        SmackManager.getInstance().getConnection().addPacketListener(listener, myFilter);*/
-
     }
 
 }

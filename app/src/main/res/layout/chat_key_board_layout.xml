@@ -16,15 +16,6 @@
         android:paddingTop="@dimen/dimen_8" >
 
         <CheckBox
-            android:id="@+id/cb_chat_face_toolbox"
-            android:layout_width="@dimen/dimen_30"
-            android:layout_height="@dimen/dimen_30"
-            android:layout_alignParentLeft="true"
-            android:layout_marginLeft="@dimen/dimen_5"
-            android:background="@drawable/chat_keyboard_selector"
-            android:button="@null" />
-
-        <CheckBox
             android:id="@+id/cb_chat_more_toolbox"
             android:layout_width="@dimen/dimen_30"
             android:layout_height="@dimen/dimen_30"

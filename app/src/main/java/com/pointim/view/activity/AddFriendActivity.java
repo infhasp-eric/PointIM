@@ -22,6 +22,7 @@ import com.pointim.utils.ChatUtils;
 import com.pointim.utils.StringUtils;
 import com.pointim.view.fragment.FriendsFragment;
 
+import java.util.Date;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -77,6 +78,8 @@ public class AddFriendActivity extends AppCompatActivity {
 
                         if(rp.isFlag()) {
                             msg.obj = "添加成功";
+
+                            Log.e("好友操作", "这时请求全部好友" + new Date());
                             ChatUtils.getAllFriends(FriendsFragment.upHandler);
                         } else {
                             msg.obj = "添加失败";

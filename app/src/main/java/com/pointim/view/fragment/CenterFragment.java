@@ -1,6 +1,8 @@
 package com.pointim.view.fragment;
 
+import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -26,12 +28,25 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
  * Created by Eric on 2016/5/14.
  */
 public class CenterFragment extends Fragment {
-    private TextView loginOut, about;
+    private TextView loginOut, about, username, nickname;
     private SweetAlertDialog loadingDialog;
+
+    //当前账号的昵称
+    public static String strNickname;
+    public static String strUsername;//当前账号的用户名
+
     private Handler dialogCancel = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             loadingDialog.cancel();
+        }
+    };
+
+    private Handler updateValue = new Handler() {
+        @Override
+        public void handleMessage(Message message) {
+            username.setText(strUsername);
+            nickname.setText(strNickname);
         }
     };
 
@@ -48,11 +63,14 @@ public class CenterFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         loadingDialog = new SweetAlertDialog(getActivity(), SweetAlertDialog.PROGRESS_TYPE).setTitleText("正在注销");
         initView(view);
+        initValue();
     }
 
     private void initView(View view) {
         loginOut = (TextView) view.findViewById(R.id.login_out);
         about = (TextView) view.findViewById(R.id.about);
+        username = (TextView) view.findViewById(R.id.username);
+        nickname = (TextView) view.findViewById(R.id.nickname);
 
         loginOut.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -63,7 +81,7 @@ public class CenterFragment extends Fragment {
                     @Override
                     public void update(Observable observable, Object data) {
                         boolean falg = (boolean) data;
-                        if(falg) {
+                        if (falg) {
                             dialogCancel.sendMessage(new Message());
                             Intent intent = new Intent(getActivity(), LoginActivity.class);
                             startActivity(intent);
@@ -73,5 +91,21 @@ public class CenterFragment extends Fragment {
                 });
             }
         });
+    }
+
+    private void initValue() {
+        System.out.println("11111111111111111111111111111111111111111111111111111");
+        SharedPreferences read = getActivity().getSharedPreferences(getString(R.string.app_shared_preferences), Activity.MODE_WORLD_READABLE);
+        strUsername  = read.getString("u_username", "");
+        System.out.println("u_usernmae is" + strUsername);
+        System.out.println("11111111111111111111111111111111111111111111111111111");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                strNickname = SmackManager.getInstance().getAccountName();
+                System.out.println("nickname is" + strNickname);
+                updateValue.sendMessage(new Message());
+            }
+        }).start();
     }
 }

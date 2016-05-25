@@ -50,7 +50,7 @@ public class SmackManager {
 	/**
 	 * Xmpp服务器地址
 	 */
-	public static final String SERVER_IP = "10.0.0.4";
+	public static final String SERVER_IP = "192.168.0.103";
     /**
      * Xmpp 服务器端口
      */
@@ -317,12 +317,15 @@ public class SmackManager {
     public String getAccountName() {
     	if(isConnected()) {
     		try {
-    			return AccountManager.getInstance(connection).getAccountAttribute("nickname");
+    			return AccountManager.getInstance(connection).getAccountAttribute("name");
 			} catch (Exception e) {
-				throw new RuntimeException(e);
+				e.printStackTrace();
+				return "";
+				//throw new RuntimeException(e);
 			}
     	}
-    	throw new NullPointerException("服务器连接失败，请先连接服务器");
+		return "";
+    	//throw new NullPointerException("服务器连接失败，请先连接服务器");
     }
     
     /**

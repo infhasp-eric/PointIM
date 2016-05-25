@@ -40,11 +40,6 @@ public class ChatKeyboard extends RelativeLayout implements
 	 */
 	private SoftKeyboardStateHelper mKeyboardHelper;
 	/**
-	 * 发送表情开关按钮
-	 */
-	@InjectView(id= R.id.cb_chat_face_toolbox)
-	private CheckBox mCbFace;
-	/**
 	 * 发送更多类型消息开关按钮
 	 */
 	@InjectView(id=R.id.cb_chat_more_toolbox, onClick="chatMoreClick")

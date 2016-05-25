@@ -25,6 +25,7 @@ import com.pointim.view.activity.SearchFriendActivity;
 import org.jivesoftware.smack.roster.RosterEntry;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,7 @@ public class FriendsFragment extends Fragment {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
+            Log.e("好友操作", "这时获取到全部好友" + new Date());
             if(isEx)
             friendAdapter.notifyDataSetChanged();
         }
